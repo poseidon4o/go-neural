@@ -22,7 +22,7 @@ func testNet(net *neural.Net) {
 
 		net.Step()
 
-		fmt.Printf("INPUT 1: %d\tINPUT 2: %d\tEXPECTED: %d\tOUTPUT: %f\n", xorInp[c][0], xorInp[c][1], xorInp[c][2], net.ValueOf(c))
+		fmt.Printf("INPUT 1: %d\tINPUT 2: %d\tEXPECTED: %d\tOUTPUT: %f\n", xorInp[c][0], xorInp[c][1], xorInp[c][2], net.ValueOf(6))
 	}
 }
 
