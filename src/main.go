@@ -65,11 +65,10 @@ func gradeNets(nets []*neural.Net) NetGrades {
 
 				deviation += math.Abs((float64(inp[2]) + 1.0) - (net.ValueOf(6) + 1.0))
 			}
-
-			grades[idx] = NetGrade{
-				net:   net,
-				grade: deviation / maxDeviation,
-			}
+		}
+		grades[idx] = NetGrade{
+			net:   net,
+			grade: deviation / maxDeviation,
 		}
 	}
 
