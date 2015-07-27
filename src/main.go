@@ -4,9 +4,11 @@ import (
 	neural "./neural"
 	"fmt"
 	"math"
-	// "math/rand"
+	"os"
 	"sort"
 )
+
+var iters int = 0
 
 var xorInp [][]int = [][]int{
 	{-1, -1, -1},
@@ -48,7 +50,7 @@ func (grades NetGrades) Swap(c, r int) {
 func gradeNets(nets []*neural.Net) NetGrades {
 	grades := make(NetGrades, len(nets), len(nets))
 
-	reps := 20
+	reps := 10
 
 	var maxDeviation float64 = float64(len(xorInp)) * float64(reps) * 2.0
 	for idx, net := range nets {
@@ -124,6 +126,7 @@ func xorNets(cnt int) *neural.Net {
 	lastBest := 0.
 	var maxErr float64 = 0.01
 	for {
+		iters++
 		grades := gradeNets(nets)
 
 		bestNet := grades[0].net
@@ -137,7 +140,7 @@ func xorNets(cnt int) *neural.Net {
 		}
 		// testNet(bestNet)
 		if lastBest != bestGrade {
-			fmt.Println(bestGrade)
+			fmt.Println(bestGrade, iters)
 			testNet(bestNet)
 			fmt.Println("------------------------------------")
 			lastBest = bestGrade
@@ -152,6 +155,34 @@ func xorNets(cnt int) *neural.Net {
 	return nil
 }
 
+func ReadFloats(fname string) []float64 {
+	var result []float64
+	f, err := os.Open(fname)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	for {
+		var val float64
+		if n, err := fmt.Fscan(f, &val); n == 0 || err != nil {
+			fmt.Println("No more")
+			return result
+		}
+		result = append(result, val)
+	}
+	return result
+}
+
 func main() {
-	testNet(xorNets(20))
+	if len(os.Args) != 2 {
+		fmt.Println("Please provide path to random numbers!")
+		return
+	}
+	values := ReadFloats(os.Args[1])
+	if values == nil {
+		fmt.Println("Failed to read values from ", os.Args[1])
+		return
+	}
+	neural.Seed(values)
+	testNet(xorNets(10))
 }

@@ -1,14 +1,27 @@
 package neural
 
 import (
-	"math/rand"
-	"time"
+//"math/rand"
+//"time"
 )
 
-var gen = rand.New(rand.NewSource(time.Now().UnixNano()))
+//var gen = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+var values []float64
+var idx int
+
+func Seed(vals []float64) {
+	values = vals
+	idx = 0
+}
 
 func Rand() float64 {
-	return gen.Float64()
+	if idx == len(values) {
+		idx = 0
+	}
+	next := values[idx]
+	idx++
+	return next
 }
 
 func RandMax(max float64) float64 {
