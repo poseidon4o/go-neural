@@ -1,13 +1,13 @@
 package neural
 
 import (
-//"math/rand"
-//"time"
+	"math/rand"
+	"time"
 )
 
-//var gen = rand.New(rand.NewSource(time.Now().UnixNano()))
+var gen = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-var values []float64
+var values []float64 = nil
 var idx int
 
 func Seed(vals []float64) {
@@ -16,6 +16,9 @@ func Seed(vals []float64) {
 }
 
 func Rand() float64 {
+	if values == nil {
+		return gen.Float64()
+	}
 	if idx == len(values) {
 		idx = 0
 	}

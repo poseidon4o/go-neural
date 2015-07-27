@@ -173,15 +173,14 @@ func ReadFloats(fname string) []float64 {
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Println("Please provide path to random numbers!")
-		return
+	if len(os.Args) == 2 {
+		fmt.Println("Reading random values from ", os.Args[1])
+		values := ReadFloats(os.Args[1])
+		if values == nil {
+			fmt.Println("Failed to load values!")
+			return
+		}
+		neural.Seed(values)
 	}
-	values := ReadFloats(os.Args[1])
-	if values == nil {
-		fmt.Println("Failed to read values from ", os.Args[1])
-		return
-	}
-	neural.Seed(values)
 	testNet(xorNets(10))
 }
