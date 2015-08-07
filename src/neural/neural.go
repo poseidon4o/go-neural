@@ -6,7 +6,7 @@ import (
 )
 
 type Neuron struct {
-	fire, next_fire float64
+	fire float64
 }
 
 func Sigmoid(x float64) float64 {
@@ -14,10 +14,7 @@ func Sigmoid(x float64) float64 {
 }
 
 func NewNeuron() *Neuron {
-	return &Neuron{
-		fire:      0,
-		next_fire: 0,
-	}
+	return &Neuron{0}
 }
 
 const InvalidSynapse float64 = math.MaxFloat64
@@ -78,17 +75,22 @@ func (n *Net) Print() {
 	}
 }
 
+func (n *Net) Clear() {
+	for _, nrn := range n.neurons {
+		nrn.fire = 0
+	}
+}
+
 func (n *Net) Step() {
 	for c := range n.synapses {
 		for r := range n.synapses[c] {
 			if n.HasSynapse(c, r) {
-				n.neurons[r].next_fire += n.synapses[c][r] * n.neurons[c].fire
+				n.neurons[r].fire += n.synapses[c][r] * n.neurons[c].fire
 			}
 		}
 	}
 
 	for c := range n.neurons {
-		n.neurons[c].fire = 2.0 * (Sigmoid(n.neurons[c].next_fire) - 0.5)
-		n.neurons[c].next_fire = 0.0
+		n.neurons[c].fire = 2.0 * (Sigmoid(n.neurons[c].fire) - 0.5)
 	}
 }

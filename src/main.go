@@ -25,6 +25,7 @@ func testNet(net *neural.Net) {
 		net.Step()
 
 		fmt.Printf("INPUT 1: %d\tINPUT 2: %d\tEXPECTED: %d\tOUTPUT: %f\n", xorInp[c][0], xorInp[c][1], xorInp[c][2], net.ValueOf(6))
+		net.Clear()
 	}
 }
 
@@ -50,22 +51,20 @@ func (grades NetGrades) Swap(c, r int) {
 func gradeNets(nets []*neural.Net) NetGrades {
 	grades := make(NetGrades, len(nets), len(nets))
 
-	reps := 10
-
-	var maxDeviation float64 = float64(len(xorInp)) * float64(reps) * 2.0
+	var maxDeviation float64 = float64(len(xorInp)) * 2.0
 	for idx, net := range nets {
 		var deviation float64 = 0
 
-		for r := 0; r < reps; r++ {
-			for _, inp := range xorInp {
-				net.Stimulate(0, float64(inp[0]))
-				net.Stimulate(1, float64(inp[1]))
+		for _, inp := range xorInp {
+			net.Stimulate(0, float64(inp[0]))
+			net.Stimulate(1, float64(inp[1]))
 
-				net.Step()
+			net.Step()
 
-				deviation += math.Abs((float64(inp[2]) + 1.0) - (net.ValueOf(6) + 1.0))
-			}
+			deviation += math.Abs((float64(inp[2]) + 1.0) - (net.ValueOf(6) + 1.0))
+			net.Clear()
 		}
+
 		grades[idx] = NetGrade{
 			net:   net,
 			grade: deviation / maxDeviation,
