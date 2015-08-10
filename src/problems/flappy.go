@@ -74,7 +74,7 @@ func NewLevel(w, h int) *Level {
 	}
 
 	// min offset from top && bottom
-	yOffset := float64(PylonHole)/2.0 + float64(h)*0.8
+	yOffset := float64(PylonHole)
 
 	for off := pylonSpacing; off < w; off += pylonSpacing {
 		hole := neural.RandMax(float64(h)-yOffset*2.0) + yOffset

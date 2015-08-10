@@ -13,7 +13,6 @@ import (
 type FBird struct {
 	bird  *problems.Bird
 	brain *neural.Net
-	grade float64
 	bestX float64
 }
 
@@ -24,18 +23,11 @@ func (birds Flock) Len() int {
 }
 
 func (birds Flock) Less(c, r int) bool {
-	return birds[c].grade > birds[r].grade
+	return birds[c].bestX < birds[r].bestX
 }
 
 func (birds Flock) Swap(c, r int) {
 	birds[c], birds[r] = birds[r], birds[c]
-}
-
-func gradeFlock(birds Flock, lvl *problems.Level) {
-	maxX := lvl.GetSize().X
-	for c := range birds {
-		birds[c].grade = birds[c].bestX / maxX
-	}
 }
 
 func thnikFlock(birds Flock, lvl *problems.Level) {
@@ -61,9 +53,10 @@ func thnikFlock(birds Flock, lvl *problems.Level) {
 
 		birds[c].brain.Stimulate(0, diffY)
 		birds[c].brain.Stimulate(1, diffX)
+		birds[c].brain.Stimulate(2, birds[c].bird.Vel().Y)
 
 		birds[c].brain.Step()
-		if birds[c].brain.ValueOf(5) > 0.75 {
+		if birds[c].brain.ValueOf(7) > 0.75 {
 			birds[c].bird.Vel().Y = -0.4
 		}
 
@@ -152,22 +145,28 @@ func main() {
 		nets[c] = neural.NewNet(8)
 
 		// diffY- to hidden
-		*nets[c].Synapse(0, 2) = 0.0
 		*nets[c].Synapse(0, 3) = 0.0
 		*nets[c].Synapse(0, 4) = 0.0
 		*nets[c].Synapse(0, 5) = 0.0
+		*nets[c].Synapse(0, 6) = 0.0
 
 		// diffX- to hidden
-		*nets[c].Synapse(1, 2) = 0.0
 		*nets[c].Synapse(1, 3) = 0.0
 		*nets[c].Synapse(1, 4) = 0.0
 		*nets[c].Synapse(1, 5) = 0.0
+		*nets[c].Synapse(1, 6) = 0.0
+
+		// velY - to hidden
+		*nets[c].Synapse(2, 3) = 0.0
+		*nets[c].Synapse(2, 4) = 0.0
+		*nets[c].Synapse(2, 5) = 0.0
+		*nets[c].Synapse(2, 6) = 0.0
 
 		// hidden to output
-		*nets[c].Synapse(2, 6) = 0.0
-		*nets[c].Synapse(3, 6) = 0.0
-		*nets[c].Synapse(4, 6) = 0.0
-		*nets[c].Synapse(5, 6) = 0.0
+		*nets[c].Synapse(3, 7) = 0.0
+		*nets[c].Synapse(4, 7) = 0.0
+		*nets[c].Synapse(5, 7) = 0.0
+		*nets[c].Synapse(6, 7) = 0.0
 
 		nets[c].Randomize()
 	}
@@ -177,15 +176,19 @@ func main() {
 	for c := 0; c < bcount; c++ {
 		flock[c].bird = (*lvl.GetBirds())[c]
 		flock[c].brain = nets[c]
-		flock[c].grade = 0
+		flock[c].bestX = 0
 	}
 
 	offset := 0
 	step := 65
 
+	frame := 0
+	var frameTime float64 = 1000 / FPS
+	start := time.Now()
 	for {
+
+		frame++
 		thnikFlock(flock, lvl)
-		gradeFlock(flock, lvl)
 
 		visible := func(x float64) bool {
 			return x >= float64(offset) && x < float64(offset+W)
@@ -233,7 +236,17 @@ func main() {
 			surface.FillRect(&rect, 0xff0000ff)
 		}
 
+		elapsed := time.Since(start)
 		time.Sleep(time.Millisecond * time.Duration(1000.0/FPS))
+		start = time.Now()
+
+		frameTime = frameTime*0.25 + float64(elapsed.Nanoseconds())*0.75
+
+		if frame > 60 {
+			frame = 0
+			fmt.Printf("fps ast: %s\tfps average %f\tcompletion %f%%\n", elapsed, frameTime/1000000.0, flock[0].bestX/float64(LVL_W)*100.0)
+		}
+
 		window.UpdateSurface()
 		lvl.Step(1000.0 / FPS)
 		surface.FillRect(&clearRect, 0xffffffff)
