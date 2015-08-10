@@ -61,7 +61,7 @@ func thnikFlock(birds Flock, lvl *problems.Level) {
 
 		birds[c].brain.Step()
 		if birds[c].brain.ValueOf(5) > 0.75 {
-			birds[c].bird.Vel().Y -= 0.1
+			birds[c].bird.Vel().Y = -0.4
 		}
 
 		birds[c].brain.Clear()
@@ -119,10 +119,11 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 func main() {
 	W := 1500
 	H := 800
+	LVL_W := W * 10
 	fmt.Println(W, H)
 	var FPS float64 = 60.0
 
-	lvl := problems.NewLevel(W, H)
+	lvl := problems.NewLevel(LVL_W, H)
 
 	sdl.Init(sdl.INIT_EVERYTHING)
 
@@ -141,7 +142,7 @@ func main() {
 	rect := sdl.Rect{0, 0, 5, 5}
 	clearRect := sdl.Rect{0, 0, int32(W), int32(H)}
 
-	bcount := 10
+	bcount := 100
 
 	nets := make([]*neural.Net, bcount, bcount)
 	for c := range nets {
@@ -170,13 +171,28 @@ func main() {
 		flock[c].grade = 0
 	}
 
+	offset := 0
+	step := 65
+
 	for {
 		thnikFlock(flock, lvl)
 		gradeFlock(flock, lvl)
 
+		visible := func(x float64) bool {
+			return x >= float64(offset) && x < float64(offset+W)
+		}
+
+		toScreen := func(x float64) float64 {
+			return float64(x - float64(offset))
+		}
+
 		brds := *lvl.GetBirds()
 		for _, brd := range brds {
-			rect.X = int32(brd.Pos().X)
+			if !visible(brd.Pos().X) {
+				continue
+			}
+
+			rect.X = int32(toScreen(brd.Pos().X))
 			rect.Y = int32(brd.Pos().Y)
 			rect.W = 5
 			rect.H = 5
@@ -185,7 +201,11 @@ func main() {
 
 		hSize := float64(problems.PylonHole) / 2.0
 		for _, pylon := range lvl.GetPylons() {
-			rect.X = int32(pylon.X)
+			if !visible(pylon.X) {
+				continue
+			}
+
+			rect.X = int32(toScreen(pylon.X))
 			rect.Y = int32(0)
 			rect.W = 5
 
@@ -197,6 +217,11 @@ func main() {
 			rect.Y = int32(pylon.Y + hSize)
 			rect.H = int32(float64(H) - (pylon.Y + hSize))
 			surface.FillRect(&rect, 0xff00ff00)
+
+			rect.Y = int32(pylon.Y)
+			rect.W = 3
+			rect.H = 3
+			surface.FillRect(&rect, 0xff0000ff)
 		}
 
 		time.Sleep(time.Millisecond * time.Duration(1000.0/FPS))
@@ -210,8 +235,11 @@ func main() {
 			case *sdl.QuitEvent:
 				stop = true
 			case *sdl.KeyDownEvent:
-				if t.Keysym.Sym == sdl.K_SPACE {
-					// (*lvl.GetBirds())[0].Vel().Y = -0.3
+				switch t.Keysym.Sym {
+				case sdl.K_LEFT:
+					offset = int(math.Max(0, float64(offset-step)))
+				case sdl.K_RIGHT:
+					offset = int(math.Min(float64(LVL_W-W), float64(offset+step)))
 				}
 			}
 		}

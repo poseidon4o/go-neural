@@ -45,7 +45,7 @@ type Bird struct {
 
 const pylonSpacing int = 150
 const PylonHole int = 150
-const G_CONST float64 = 0.0003
+const G_CONST float64 = 0.0005
 
 var G_FORCE Vector = Vector{
 	X: 0,
