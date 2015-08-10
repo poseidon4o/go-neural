@@ -1,185 +1,64 @@
 package main
 
 import (
-	neural "./neural"
-	"fmt"
-	"math"
-	"os"
-	"sort"
+	// neural "./neural"
+	problems "./problems"
+	sdl "github.com/veandco/go-sdl2/sdl"
+	"time"
 )
 
-var iters int = 0
+func main() {
+	W := 900
+	H := 500
+	var FPS float64 = 60.0
 
-var xorInp [][]int = [][]int{
-	{-1, -1, -1},
-	{-1, 1, 1},
-	{1, -1, 1},
-	{1, 1, -1},
-}
+	lvl := problems.NewLevel(W, H)
+	lvl.AddBirds(1)
 
-func testNet(net *neural.Net) {
-	for c := range xorInp {
-		net.Stimulate(0, float64(xorInp[c][0]))
-		net.Stimulate(1, float64(xorInp[c][1]))
+	sdl.Init(sdl.INIT_EVERYTHING)
 
-		net.Step()
-
-		fmt.Printf("INPUT 1: %d\tINPUT 2: %d\tEXPECTED: %d\tOUTPUT: %f\n", xorInp[c][0], xorInp[c][1], xorInp[c][2], net.ValueOf(6))
-		net.Clear()
+	window, err := sdl.CreateWindow("test", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
+		int(W), int(H), sdl.WINDOW_SHOWN)
+	if err != nil {
+		panic(err)
 	}
-}
+	defer window.Destroy()
 
-type NetGrade struct {
-	net   *neural.Net
-	grade float64
-}
-
-type NetGrades []NetGrade
-
-func (grades NetGrades) Len() int {
-	return len(grades)
-}
-
-func (grades NetGrades) Less(c, r int) bool {
-	return grades[c].grade > grades[r].grade
-}
-
-func (grades NetGrades) Swap(c, r int) {
-	grades[c], grades[r] = grades[r], grades[c]
-}
-
-func gradeNets(nets []*neural.Net) NetGrades {
-	grades := make(NetGrades, len(nets), len(nets))
-
-	var maxDeviation float64 = float64(len(xorInp)) * 2.0
-	for idx, net := range nets {
-		var deviation float64 = 0
-
-		for _, inp := range xorInp {
-			net.Stimulate(0, float64(inp[0]))
-			net.Stimulate(1, float64(inp[1]))
-
-			net.Step()
-
-			deviation += math.Abs((float64(inp[2]) + 1.0) - (net.ValueOf(6) + 1.0))
-			net.Clear()
-		}
-
-		grades[idx] = NetGrade{
-			net:   net,
-			grade: deviation / maxDeviation,
-		}
+	surface, err := window.GetSurface()
+	if err != nil {
+		panic(err)
 	}
 
-	return grades
-}
+	rect := sdl.Rect{0, 0, 5, 5}
+	clearRect := sdl.Rect{0, 0, int32(W), int32(H)}
 
-func mutateNets(grades NetGrades) {
-	sort.Sort(grades)
-
-	randNet := func() *neural.Net {
-		return grades[int(neural.RandMax(float64(len(grades))))].net
-	}
-
-	best := grades[0].net
-
-	for c := 0; c < len(grades)/2; c++ {
-		grades[c].net = neural.Cross(best, randNet())
-
-		if neural.Chance(0.05) {
-			grades[c].net.Mutate(0.33)
-		}
-	}
-
-	for c := 0; c <= len(grades)/5; c++ {
-		grades[c+len(grades)/2].net.Mutate(0.5)
-	}
-}
-
-func xorNets(cnt int) *neural.Net {
-	nets := make([]*neural.Net, cnt, cnt)
-	for c := range nets {
-		nets[c] = neural.NewNet(7)
-
-		// input 0 - to hidden
-		*nets[c].Synapse(0, 2) = 0.0
-		*nets[c].Synapse(0, 3) = 0.0
-		*nets[c].Synapse(0, 4) = 0.0
-		*nets[c].Synapse(0, 5) = 0.0
-
-		// input 1 - to hidden
-		*nets[c].Synapse(1, 2) = 0.0
-		*nets[c].Synapse(1, 3) = 0.0
-		*nets[c].Synapse(1, 4) = 0.0
-		*nets[c].Synapse(1, 5) = 0.0
-
-		// hidden to output
-		*nets[c].Synapse(2, 6) = 0.0
-		*nets[c].Synapse(3, 6) = 0.0
-		*nets[c].Synapse(4, 6) = 0.0
-		*nets[c].Synapse(5, 6) = 0.0
-
-		nets[c].Randomize()
-	}
-	lastBest := 0.
-	var maxErr float64 = 0.01
 	for {
-		iters++
-		grades := gradeNets(nets)
+		rect.X = int32(lvl.GetBirds()[0].Pos().X)
+		rect.Y = int32(lvl.GetBirds()[0].Pos().Y)
+		surface.FillRect(&rect, 0xffff0000)
 
-		bestNet := grades[0].net
-		bestGrade := grades[0].grade
+		time.Sleep(time.Millisecond * time.Duration(1000.0/FPS))
+		window.UpdateSurface()
+		lvl.Step(1000.0 / FPS)
+		surface.FillRect(&clearRect, 0xffffffff)
 
-		for _, grade := range grades {
-			if grade.grade < bestGrade {
-				bestGrade = grade.grade
-				bestNet = grade.net
+		stop := false
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch t := event.(type) {
+			case *sdl.QuitEvent:
+				stop = true
+			case *sdl.KeyUpEvent:
+				if t.Keysym.Sym == sdl.K_SPACE {
+					lvl.GetBirds()[0].Vel().Y = -0.3
+				}
 			}
 		}
-		// testNet(bestNet)
-		if lastBest != bestGrade {
-			fmt.Println(bestGrade, iters)
-			testNet(bestNet)
-			fmt.Println("------------------------------------")
-			lastBest = bestGrade
-		}
-		if bestGrade < maxErr {
-			return bestNet
+
+		if stop {
+			break
 		}
 
-		mutateNets(grades)
 	}
 
-	return nil
-}
-
-func ReadFloats(fname string) []float64 {
-	var result []float64
-	f, err := os.Open(fname)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	for {
-		var val float64
-		if n, err := fmt.Fscan(f, &val); n == 0 || err != nil {
-			fmt.Println("No more")
-			return result
-		}
-		result = append(result, val)
-	}
-	return result
-}
-
-func main() {
-	if len(os.Args) == 2 {
-		fmt.Println("Reading random values from ", os.Args[1])
-		values := ReadFloats(os.Args[1])
-		if values == nil {
-			fmt.Println("Failed to load values!")
-			return
-		}
-		neural.Seed(values)
-	}
-	testNet(xorNets(10))
+	sdl.Quit()
 }
