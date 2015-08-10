@@ -56,8 +56,11 @@ func thnikFlock(birds Flock, lvl *problems.Level) {
 	for c := range birds {
 		birds[c].bestX = math.Max(birds[c].bird.Pos().X, birds[c].bestX)
 		next := nextPylon(birds[c].bird.Pos())
-		diff := next.Y - birds[c].bird.Pos().Y
-		birds[c].brain.Stimulate(0, diff)
+		diffY := next.Y - birds[c].bird.Pos().Y
+		diffX := next.X - birds[c].bird.Pos().X
+
+		birds[c].brain.Stimulate(0, diffY)
+		birds[c].brain.Stimulate(1, diffX)
 
 		birds[c].brain.Step()
 		if birds[c].brain.ValueOf(5) > 0.75 {
@@ -146,19 +149,25 @@ func main() {
 
 	nets := make([]*neural.Net, bcount, bcount)
 	for c := range nets {
-		nets[c] = neural.NewNet(7)
+		nets[c] = neural.NewNet(8)
 
-		// input 0 - to hidden
-		*nets[c].Synapse(0, 1) = 0.0
+		// diffY- to hidden
 		*nets[c].Synapse(0, 2) = 0.0
 		*nets[c].Synapse(0, 3) = 0.0
 		*nets[c].Synapse(0, 4) = 0.0
+		*nets[c].Synapse(0, 5) = 0.0
+
+		// diffX- to hidden
+		*nets[c].Synapse(1, 2) = 0.0
+		*nets[c].Synapse(1, 3) = 0.0
+		*nets[c].Synapse(1, 4) = 0.0
+		*nets[c].Synapse(1, 5) = 0.0
 
 		// hidden to output
-		*nets[c].Synapse(1, 5) = 0.0
-		*nets[c].Synapse(2, 5) = 0.0
-		*nets[c].Synapse(3, 5) = 0.0
-		*nets[c].Synapse(4, 5) = 0.0
+		*nets[c].Synapse(2, 6) = 0.0
+		*nets[c].Synapse(3, 6) = 0.0
+		*nets[c].Synapse(4, 6) = 0.0
+		*nets[c].Synapse(5, 6) = 0.0
 
 		nets[c].Randomize()
 	}
