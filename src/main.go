@@ -3,6 +3,7 @@ package main
 import (
 	neural "./neural"
 	problems "./problems"
+	"fmt"
 	sdl "github.com/veandco/go-sdl2/sdl"
 	"math"
 	"sort"
@@ -52,17 +53,18 @@ func thnikFlock(birds Flock, lvl *problems.Level) {
 		return *problems.NewVector(0, 0)
 	}
 
-	for _, brd := range birds {
-		brd.bestX = math.Max(brd.bird.Pos().X, brd.bestX)
-		next := nextPylon(brd.bird.Pos())
-		diff := next.Y - brd.bird.Pos().Y
-		brd.brain.Stimulate(0, diff)
+	for c := range birds {
+		birds[c].bestX = math.Max(birds[c].bird.Pos().X, birds[c].bestX)
+		next := nextPylon(birds[c].bird.Pos())
+		diff := next.Y - birds[c].bird.Pos().Y
+		birds[c].brain.Stimulate(0, diff)
 
-		brd.brain.Step()
-		if brd.brain.ValueOf(5) > 0.75 {
-			brd.bird.Pos().Y -= 0.00001
+		birds[c].brain.Step()
+		if birds[c].brain.ValueOf(5) > 0.75 {
+			birds[c].bird.Vel().Y -= 0.1
 		}
-		brd.brain.Clear()
+
+		birds[c].brain.Clear()
 	}
 }
 
@@ -85,7 +87,8 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 
 	best := birds[0].brain
 
-	for _, brd := range birds {
+	for c := range birds {
+		brd := &birds[c]
 		pos := brd.bird.Pos()
 		isDead := pos.Y >= h || pos.Y < 10
 
@@ -99,13 +102,12 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 		}
 
 		if isDead {
-			pos.Y = h / 2
-			pos.X = 1
+			*pos = *lvl.NewBirdPos()
 			*brd.bird.Vel() = *problems.NewVector(0.1, 0)
 
 			brd.brain = neural.Cross(best, randNet())
 
-			if neural.Chance(0.5) {
+			if neural.Chance(0.1) {
 				brd.brain.Mutate(0.33)
 			}
 		}
@@ -114,10 +116,10 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 
 }
 
-/////////
 func main() {
 	W := 1500
 	H := 800
+	fmt.Println(W, H)
 	var FPS float64 = 60.0
 
 	lvl := problems.NewLevel(W, H)
@@ -204,9 +206,13 @@ func main() {
 
 		stop := false
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch event.(type) {
+			switch t := event.(type) {
 			case *sdl.QuitEvent:
 				stop = true
+			case *sdl.KeyDownEvent:
+				if t.Keysym.Sym == sdl.K_SPACE {
+					// (*lvl.GetBirds())[0].Vel().Y = -0.3
+				}
 			}
 		}
 

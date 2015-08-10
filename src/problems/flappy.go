@@ -45,7 +45,7 @@ type Bird struct {
 
 const pylonSpacing int = 150
 const PylonHole int = 150
-const G_CONST float64 = 0.0001
+const G_CONST float64 = 0.0003
 
 var G_FORCE Vector = Vector{
 	X: 0,
@@ -73,10 +73,10 @@ func NewLevel(w, h int) *Level {
 		birds:  make([]*Bird, 0),
 	}
 
-	for off := pylonSpacing * 2; off < w; off += pylonSpacing {
-		// min offset from top && bottom
-		yOffset := float64(PylonHole)/2.0 + float64(h)*0.8
+	// min offset from top && bottom
+	yOffset := float64(PylonHole)/2.0 + float64(h)*0.8
 
+	for off := pylonSpacing; off < w; off += pylonSpacing {
 		hole := neural.RandMax(float64(h)-yOffset*2.0) + yOffset
 
 		lvl.pylons = append(lvl.pylons, *NewVector(float64(off), hole))
@@ -84,11 +84,15 @@ func NewLevel(w, h int) *Level {
 	return lvl
 }
 
+func (l *Level) NewBirdPos() *Vector {
+	return NewVector(1, l.size.Y/2)
+}
+
 func (l *Level) AddBirds(count int) {
 	for c := 0; c < count; c++ {
 
 		l.birds = append(l.birds, &Bird{
-			pos: *NewVector(1, l.size.Y/2),
+			pos: *l.NewBirdPos(),
 			vel: *NewVector(0.1, 0),
 		})
 	}
