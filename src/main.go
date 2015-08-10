@@ -6,6 +6,7 @@ import (
 	"fmt"
 	sdl "github.com/veandco/go-sdl2/sdl"
 	"math"
+	"runtime"
 	"sort"
 	"time"
 )
@@ -44,8 +45,9 @@ func thnikFlock(birds Flock, lvl *problems.Level) {
 		}
 		return *problems.NewVector(0, 0)
 	}
+	wg := make(chan struct{}, len(birds))
 
-	for c := range birds {
+	thinkBird := func(c int) {
 		birds[c].bestX = math.Max(birds[c].bird.Pos().X, birds[c].bestX)
 		next := nextPylon(birds[c].bird.Pos())
 		diffY := next.Y - birds[c].bird.Pos().Y
@@ -61,6 +63,15 @@ func thnikFlock(birds Flock, lvl *problems.Level) {
 		}
 
 		birds[c].brain.Clear()
+		wg <- struct{}{}
+	}
+
+	for c := 0; c < len(birds); c++ {
+		go thinkBird(c)
+	}
+
+	for c := 0; c < len(birds); c++ {
+		<-wg
 	}
 }
 
@@ -113,6 +124,7 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	W := 1500
 	H := 800
 	LVL_W := W * 10
@@ -138,7 +150,7 @@ func main() {
 	rect := sdl.Rect{0, 0, 5, 5}
 	clearRect := sdl.Rect{0, 0, int32(W), int32(H)}
 
-	bcount := 100
+	bcount := 10000
 
 	nets := make([]*neural.Net, bcount, bcount)
 	for c := range nets {
