@@ -15,6 +15,7 @@ type FBird struct {
 	bird  *problems.Bird
 	brain *neural.Net
 	bestX float64
+	dead  bool
 }
 
 type Flock []FBird
@@ -31,35 +32,56 @@ func (birds Flock) Swap(c, r int) {
 	birds[c], birds[r] = birds[r], birds[c]
 }
 
-func thnikFlock(birds Flock, lvl *problems.Level) {
-	pylons := lvl.GetPylons()
+// will check if going from pos to next will collide
+func checkFlock(birds Flock, lvl *problems.Level) {
 
-	nextPylon := func(from *problems.Vector) problems.Vector {
-		for _, p := range pylons {
-			if p.X < from.X-1 {
-				continue
-			} else {
-				// first pylon after from
-				return p
-			}
-		}
-		return *problems.NewVector(0, 0)
+	collide := func(aX, bX, cX float64) bool {
+		// c.X == d.X
+		return aX-1 <= cX && bX+1 >= cX
 	}
+
+	hSize := float64(problems.PylonHole / 2)
+
+	for c := range birds {
+		if birds[c].bird.Pos.Y >= lvl.GetSize().Y || birds[c].bird.Pos.Y < 1 {
+			// hit ceeling or floor
+			birds[c].dead = true
+			continue
+		}
+
+		pylon := lvl.ClosestPylon(&birds[c].bird.Pos)
+		if birds[c].bird.Pos.Y >= pylon.Y-hSize && birds[c].bird.Pos.Y <= pylon.Y+hSize {
+			// in the pylon hole
+			continue
+		}
+
+		if birds[c].bird.Pos.Y > pylon.Y {
+			// bottom pylon segment
+			birds[c].dead = collide(birds[c].bird.Pos.X, birds[c].bird.NextPos.X, pylon.X)
+		} else {
+			// top pylon segment
+			birds[c].dead = collide(birds[c].bird.Pos.X, birds[c].bird.NextPos.X, pylon.X)
+		}
+	}
+
+}
+
+func thnikFlock(birds Flock, lvl *problems.Level) {
 	wg := make(chan struct{}, len(birds))
 
 	thinkBird := func(c int) {
-		birds[c].bestX = math.Max(birds[c].bird.Pos().X, birds[c].bestX)
-		next := nextPylon(birds[c].bird.Pos())
-		diffY := next.Y - birds[c].bird.Pos().Y
-		diffX := next.X - birds[c].bird.Pos().X
+		birds[c].bestX = math.Max(birds[c].bird.Pos.X, birds[c].bestX)
+		next := lvl.FirstPylonAfter(&birds[c].bird.Pos)
+		diffY := next.Y - birds[c].bird.Pos.Y
+		diffX := next.X - birds[c].bird.Pos.X
 
 		birds[c].brain.Stimulate(0, diffY)
 		birds[c].brain.Stimulate(1, diffX)
-		birds[c].brain.Stimulate(2, birds[c].bird.Vel().Y)
+		birds[c].brain.Stimulate(2, birds[c].bird.Vel.Y)
 
 		birds[c].brain.Step()
 		if birds[c].brain.ValueOf(7) > 0.75 {
-			birds[c].bird.Vel().Y = -0.4
+			birds[c].bird.Vel.Y = -0.4
 		}
 
 		birds[c].brain.Clear()
@@ -76,20 +98,10 @@ func thnikFlock(birds Flock, lvl *problems.Level) {
 }
 
 func mutateFlock(birds Flock, lvl *problems.Level) {
-	h := lvl.GetSize().Y
 	sort.Sort(birds)
 
 	randNet := func() *neural.Net {
 		return birds[int(neural.RandMax(float64(len(birds))))].brain
-	}
-	hSize := float64(problems.PylonHole / 2)
-	hitsPylon := func(pos, pyl *problems.Vector) bool {
-		hits := true
-		// in range of pylon
-		hits = hits && (pos.X >= pyl.X-1 && pos.X <= pyl.X+1)
-		// not in hole
-		hits = hits && (pos.Y < pyl.Y-hSize || pos.Y > pyl.Y+hSize)
-		return hits
 	}
 
 	best := birds[0].brain
@@ -97,30 +109,19 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 	// TODO move dead check out of this loop
 	// TODO check if the bird jumps trough the pylon - kill
 	for c := range birds {
-		brd := &birds[c]
-		pos := brd.bird.Pos()
-		isDead := pos.Y >= h || pos.Y < 10
+		if birds[c].dead {
+			birds[c].dead = false
+			birds[c].bird.Pos = *lvl.NewBirdPos()
+			birds[c].bird.Vel = *problems.NewVector(0.1, 0)
 
-		if !isDead {
-			for _, p := range lvl.GetPylons() {
-				if hitsPylon(pos, &p) {
-					isDead = true
-					break
-				}
-			}
-		}
-
-		if isDead {
-			*pos = *lvl.NewBirdPos()
-			*brd.bird.Vel() = *problems.NewVector(0.1, 0)
-
-			brd.brain = neural.Cross(best, randNet())
+			birds[c].brain = neural.Cross(best, randNet())
 
 			if neural.Chance(0.1) {
-				brd.brain.Mutate(0.33)
+				birds[c].brain.Mutate(0.33)
 			}
+		} else {
+			birds[c].bird.Pos = birds[c].bird.NextPos
 		}
-
 	}
 
 }
@@ -217,12 +218,12 @@ func main() {
 
 		brds := *lvl.GetBirds()
 		for _, brd := range brds {
-			if !visible(brd.Pos().X) {
+			if !visible(brd.Pos.X) {
 				continue
 			}
 
-			rect.X = int32(toScreen(brd.Pos().X))
-			rect.Y = int32(brd.Pos().Y)
+			rect.X = int32(toScreen(brd.Pos.X))
+			rect.Y = int32(brd.Pos.Y)
 			rect.W = 5
 			rect.H = 5
 			if doDraw {
@@ -278,6 +279,9 @@ func main() {
 
 		window.UpdateSurface()
 		lvl.Step(float64(elapsed.Nanoseconds()) / 1000000.0)
+		checkFlock(flock, lvl)
+		// lvl.DoStep()
+
 		if doDraw {
 			surface.FillRect(&clearRect, 0xffffffff)
 		}
