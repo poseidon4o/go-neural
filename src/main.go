@@ -265,7 +265,7 @@ func main() {
 		elapsed := time.Since(start)
 
 		if doDraw && frameTime < 1000.0/FPS {
-			time.Sleep(time.Millisecond * time.Duration(1000.0/FPS))
+			time.Sleep(time.Millisecond * time.Duration(1000.0/FPS-frameTime))
 		}
 
 		start = time.Now()
@@ -280,7 +280,6 @@ func main() {
 		window.UpdateSurface()
 		lvl.Step(float64(elapsed.Nanoseconds()) / 1000000.0)
 		checkFlock(flock, lvl)
-		// lvl.DoStep()
 
 		if doDraw {
 			surface.FillRect(&clearRect, 0xffffffff)
