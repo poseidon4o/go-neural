@@ -20,6 +20,14 @@ type DrawableProblem interface {
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+	fmt.Println("Controls:")
+	fmt.Println("end:\tfurthest action in the level")
+	fmt.Println("home:\tmove back to level begining")
+	fmt.Println("left:\tmove screen to the left")
+	fmt.Println("right:\tmove screen to the right")
+	fmt.Println("esc:\teixt")
+	fmt.Println("")
+
 	doDraw := true
 
 	W := 1500
