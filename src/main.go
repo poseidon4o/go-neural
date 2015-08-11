@@ -24,7 +24,7 @@ func (birds Flock) Len() int {
 }
 
 func (birds Flock) Less(c, r int) bool {
-	return birds[c].bestX < birds[r].bestX
+	return birds[c].bestX > birds[r].bestX
 }
 
 func (birds Flock) Swap(c, r int) {
