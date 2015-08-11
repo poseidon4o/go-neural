@@ -270,7 +270,7 @@ func main() {
 
 		start = time.Now()
 
-		frameTime = frameTime*0.25 + float64(elapsed.Nanoseconds())*0.75
+		frameTime = frameTime*0.9 + float64(elapsed.Nanoseconds())*0.1
 
 		if frame > 60 {
 			frame = 0
