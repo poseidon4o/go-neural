@@ -14,5 +14,5 @@ Install sdl2 from your favourite package manager and
 ```
 go get github.com/veandco/go-sdl2/sdl
 go get github.com/poseidon4o/go-neural
-./go-neural
+go-neural
 ```
