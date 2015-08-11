@@ -291,8 +291,9 @@ func main() {
 			}
 		}
 
+		pylons := lvl.GetPylons()
 		hSize := float64(problems.PylonHole) / 2.0
-		for _, pylon := range lvl.GetPylons() {
+		for _, pylon := range pylons {
 			if !visible(pylon.X) {
 				continue
 			}
@@ -326,10 +327,16 @@ func main() {
 		frameMs := float64(elapsed / 1000000)
 
 		averageFrameTime = averageFrameTime*0.9 + float64(elapsed.Nanoseconds())*0.1
+		completion := flock[0].bestX / float64(LVL_W) * 100.0
+
+		if flock[0].bestX > pylons[len(pylons)-1].X {
+			fmt.Println("Done")
+			break
+		}
 
 		if frame > int(FPS) {
 			frame = 0
-			fmt.Printf("ftime last: %s\tftime average %f\tcompletion %f%%\n", elapsed, frameMs, flock[0].bestX/float64(LVL_W)*100.0)
+			fmt.Printf("ftime last: %s\tftime average %f\tcompletion %f%%\n", elapsed, frameMs, completion)
 		}
 
 		// sleep only if drawing and there is time to sleep more than 3ms
