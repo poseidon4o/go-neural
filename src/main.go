@@ -14,14 +14,15 @@ import (
 type NeuronName int
 
 const (
-	diffY NeuronName = iota
-	diffX NeuronName = iota
-	velY  NeuronName = iota
-	H1    NeuronName = iota
-	H2    NeuronName = iota
-	H3    NeuronName = iota
-	H4    NeuronName = iota
-	jump  NeuronName = iota
+	diffY     NeuronName = iota
+	diffX     NeuronName = iota
+	velY      NeuronName = iota
+	H1        NeuronName = iota
+	H2        NeuronName = iota
+	H3        NeuronName = iota
+	H4        NeuronName = iota
+	jump      NeuronName = iota
+	NRN_COUNT int        = iota
 )
 
 func nrn(name NeuronName) int {
@@ -177,7 +178,7 @@ func main() {
 
 	nets := make([]*neural.Net, bcount, bcount)
 	for c := range nets {
-		nets[c] = neural.NewNet(8)
+		nets[c] = neural.NewNet(NRN_COUNT)
 
 		// diffY- to hidden
 		*nets[c].Synapse(nrn(diffY), nrn(H1)) = 0.0
