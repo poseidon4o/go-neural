@@ -48,7 +48,8 @@ type Bird struct {
 
 const pylonSpacing int = 150
 const PylonHole int = 150
-const G_CONST float64 = 0.0005
+const G_CONST float64 = 9.8 * 100
+const SCROLL_SPEED float64 = 75
 
 var G_FORCE Vector = Vector{
 	X: 0,
@@ -88,7 +89,7 @@ func (l *Level) AddBirds(count int) {
 
 		l.birds = append(l.birds, &Bird{
 			Pos:     *l.NewBirdPos(),
-			Vel:     *NewVector(0.1, 0),
+			Vel:     *NewVector(SCROLL_SPEED, 0),
 			NextPos: *NewVector(0, 0),
 		})
 	}

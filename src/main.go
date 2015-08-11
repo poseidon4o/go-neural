@@ -98,7 +98,7 @@ func thnikFlock(birds Flock, lvl *problems.Level) {
 
 		birds[c].brain.Step()
 		if birds[c].brain.ValueOf(nrn(jump)) > 0.75 {
-			birds[c].bird.Vel.Y = -0.4
+			birds[c].bird.Vel.Y = -500
 		}
 
 		birds[c].brain.Clear()
@@ -127,7 +127,7 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 		if birds[c].dead {
 			birds[c].dead = false
 			birds[c].bird.Pos = *lvl.NewBirdPos()
-			birds[c].bird.Vel = *problems.NewVector(0.1, 0)
+			birds[c].bird.Vel = *problems.NewVector(problems.SCROLL_SPEED, 0)
 
 			birds[c].brain = neural.Cross(best, randNet())
 
@@ -152,7 +152,9 @@ func main() {
 	H := 800
 	LVL_W := W * 50
 	fmt.Println(W, H)
+
 	var FPS float64 = 60.0
+	FRAME_TIME_MS := 1000 / FPS
 
 	lvl := problems.NewLevel(LVL_W, H)
 
@@ -219,9 +221,49 @@ func main() {
 	step := 65
 
 	frame := 0
-	var frameTime float64 = 1000 / FPS
+	var averageFrameTime float64 = FRAME_TIME_MS * 1000000 // in nanosec
 	start := time.Now()
 	for {
+		start = time.Now()
+
+		if doDraw {
+			window.UpdateSurface()
+		} else if frame%10 == 0 {
+			// update only 10% of the frames
+			window.UpdateSurface()
+		}
+
+		lvl.Step(1 / FPS)
+		checkFlock(flock, lvl)
+
+		mutateFlock(flock, lvl)
+
+		if doDraw {
+			surface.FillRect(&clearRect, 0xffffffff)
+		}
+
+		stop := false
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch t := event.(type) {
+			case *sdl.QuitEvent:
+				stop = true
+			case *sdl.KeyDownEvent:
+				switch t.Keysym.Sym {
+				case sdl.K_LEFT:
+					offset = int(math.Max(0, float64(offset-step)))
+				case sdl.K_RIGHT:
+					offset = int(math.Min(float64(LVL_W-W), float64(offset+step)))
+				case sdl.K_SPACE:
+					doDraw = !doDraw
+					surface.FillRect(&clearRect, 0xffaaaaaa)
+					window.UpdateSurface()
+				}
+			}
+		}
+
+		if stop {
+			break
+		}
 
 		frame++
 		thnikFlock(flock, lvl)
@@ -281,51 +323,19 @@ func main() {
 		}
 
 		elapsed := time.Since(start)
+		frameMs := float64(elapsed / 1000000)
 
-		if doDraw && frameTime < 1000.0/FPS {
-			time.Sleep(time.Millisecond * time.Duration(1000.0/FPS-frameTime))
-		}
+		averageFrameTime = averageFrameTime*0.9 + float64(elapsed.Nanoseconds())*0.1
 
-		start = time.Now()
-
-		frameTime = frameTime*0.9 + float64(elapsed.Nanoseconds())*0.1
-
-		if frame > 60 {
+		if frame > int(FPS) {
 			frame = 0
-			fmt.Printf("fps last: %s\tfps average %f\tcompletion %f%%\n", elapsed, frameTime/1000000.0, flock[0].bestX/float64(LVL_W)*100.0)
+			fmt.Printf("ftime last: %s\tftime average %f\tcompletion %f%%\n", elapsed, frameMs, flock[0].bestX/float64(LVL_W)*100.0)
 		}
 
-		window.UpdateSurface()
-		lvl.Step(float64(elapsed.Nanoseconds()) / 1000000.0)
-		checkFlock(flock, lvl)
-
-		if doDraw {
-			surface.FillRect(&clearRect, 0xffffffff)
+		// sleep only if drawing and there is time to sleep more than 3ms
+		if doDraw && frameMs < FRAME_TIME_MS && FRAME_TIME_MS-frameMs > 3.0 {
+			time.Sleep(time.Millisecond * time.Duration(FRAME_TIME_MS-frameMs))
 		}
-
-		stop := false
-		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch t := event.(type) {
-			case *sdl.QuitEvent:
-				stop = true
-			case *sdl.KeyDownEvent:
-				switch t.Keysym.Sym {
-				case sdl.K_LEFT:
-					offset = int(math.Max(0, float64(offset-step)))
-				case sdl.K_RIGHT:
-					offset = int(math.Min(float64(LVL_W-W), float64(offset+step)))
-				case sdl.K_SPACE:
-					doDraw = !doDraw
-					surface.FillRect(&clearRect, 0xffaaaaaa)
-				}
-			}
-		}
-
-		if stop {
-			break
-		}
-
-		mutateFlock(flock, lvl)
 	}
 
 	sdl.Quit()
