@@ -257,6 +257,12 @@ func main() {
 					doDraw = !doDraw
 					surface.FillRect(&clearRect, 0xffaaaaaa)
 					window.UpdateSurface()
+				case sdl.K_ESCAPE:
+					stop = true
+				case sdl.K_END:
+					offset = int(math.Max(math.Min(float64(LVL_W-W), flock[0].bestX-float64(W)/2), 0))
+				case sdl.K_HOME:
+					offset = 0
 				}
 			}
 		}
