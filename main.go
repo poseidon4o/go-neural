@@ -1,10 +1,10 @@
 package main
 
 import (
-	neural "./src/neural"
-	flappy "./src/problems/flappy"
-	util "./src/util"
 	"fmt"
+	neural "github.com/poseidon4o/go-neural/src/neural"
+	flappy "github.com/poseidon4o/go-neural/src/problems/flappy"
+	util "github.com/poseidon4o/go-neural/src/util"
 	sdl "github.com/veandco/go-sdl2/sdl"
 	"math"
 	"runtime"

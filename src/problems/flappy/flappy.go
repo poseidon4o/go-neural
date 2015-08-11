@@ -1,8 +1,8 @@
 package problems
 
 import (
-	neural "../../neural"
-	util "../../util"
+	neural "github.com/poseidon4o/go-neural/src/neural"
+	util "github.com/poseidon4o/go-neural/src/util"
 	"math"
 )
 
