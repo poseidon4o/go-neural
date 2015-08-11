@@ -110,18 +110,6 @@ func (l *Level) FirstPylonAfter(pos *util.Vector) util.Vector {
 	// idx >= 0 ? l.pylons[idx] : *util.NewVector(0, 0)
 }
 
-func (l *Level) GetBirds() *[]*Bird {
-	return &l.birds
-}
-
-func (l *Level) GetPylons() []util.Vector {
-	return l.pylons
-}
-
-func (l *Level) GetSize() util.Vector {
-	return l.size
-}
-
 func (l *Level) Step(dt float64) {
 	for c := range l.birds {
 		// position += timestep * (velocity + timestep * acceleration / 2);

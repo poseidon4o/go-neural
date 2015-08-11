@@ -123,7 +123,7 @@ func NewFlappy(birdCount int, size *util.Vector) *Flappy {
 	level.AddBirds(birdCount)
 	flock := make(Flock, birdCount)
 	for c := 0; c < birdCount; c++ {
-		flock[c].bird = (*level.GetBirds())[c]
+		flock[c].bird = level.birds[c]
 		flock[c].brain = nets[c]
 		flock[c].bestX = 0
 	}
@@ -160,6 +160,7 @@ func (birds Flock) Swap(c, r int) {
 // will check if going from pos to next will collide
 func (f *Flappy) checkFlock() {
 
+	// just for readability
 	collide := func(aX, bX, cX float64) bool {
 		// c.X == d.X
 		return aX-1 <= cX && bX+1 >= cX
@@ -180,13 +181,7 @@ func (f *Flappy) checkFlock() {
 			continue
 		}
 
-		if f.birds[c].bird.Pos.Y > pylon.Y {
-			// bottom pylon segment
-			f.birds[c].dead = collide(f.birds[c].bird.Pos.X, f.birds[c].bird.NextPos.X, pylon.X)
-		} else {
-			// top pylon segment
-			f.birds[c].dead = collide(f.birds[c].bird.Pos.X, f.birds[c].bird.NextPos.X, pylon.X)
-		}
+		f.birds[c].dead = collide(f.birds[c].bird.Pos.X, f.birds[c].bird.NextPos.X, pylon.X)
 	}
 
 }
