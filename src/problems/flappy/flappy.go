@@ -1,49 +1,15 @@
 package problems
 
 import (
-	neural "../neural"
+	neural "../../neural"
+	util "../../util"
 	"math"
 )
 
-type Vector struct {
-	X, Y float64
-}
-
-func (v Vector) Add(o *Vector) *Vector {
-	v.X += o.X
-	v.Y += o.Y
-	return &v
-}
-
-func (v Vector) Neg() *Vector {
-	v.X = -v.X
-	v.Y = -v.Y
-	return &v
-}
-
-func (v Vector) Mul(o *Vector) *Vector {
-	v.X *= o.X
-	v.Y *= o.Y
-	return &v
-}
-
-func (v Vector) Scale(scalar float64) *Vector {
-	v.X *= scalar
-	v.Y *= scalar
-	return &v
-}
-
-func NewVector(x, y float64) *Vector {
-	return &Vector{
-		X: x,
-		Y: y,
-	}
-}
-
 type Bird struct {
-	Pos     Vector
-	Vel     Vector
-	NextPos Vector
+	Pos     util.Vector
+	Vel     util.Vector
+	NextPos util.Vector
 }
 
 const pylonSpacing int = 150
@@ -51,21 +17,21 @@ const PylonHole int = 150
 const G_CONST float64 = 9.8 * 100
 const SCROLL_SPEED float64 = 75
 
-var G_FORCE Vector = Vector{
+var G_FORCE util.Vector = util.Vector{
 	X: 0,
 	Y: G_CONST,
 }
 
 type Level struct {
-	size   Vector
-	pylons []Vector
+	size   util.Vector
+	pylons []util.Vector
 	birds  []*Bird
 }
 
 func NewLevel(w, h int) *Level {
 	lvl := &Level{
-		size:   *NewVector(float64(w), float64(h)),
-		pylons: make([]Vector, 0),
+		size:   *util.NewVector(float64(w), float64(h)),
+		pylons: make([]util.Vector, 0),
 		birds:  make([]*Bird, 0),
 	}
 
@@ -75,13 +41,13 @@ func NewLevel(w, h int) *Level {
 	for off := pylonSpacing; off < w; off += pylonSpacing {
 		hole := neural.RandMax(float64(h)-yOffset*2.0) + yOffset
 
-		lvl.pylons = append(lvl.pylons, *NewVector(float64(off), hole))
+		lvl.pylons = append(lvl.pylons, *util.NewVector(float64(off), hole))
 	}
 	return lvl
 }
 
-func (l *Level) NewBirdPos() *Vector {
-	return NewVector(1, l.size.Y/2)
+func (l *Level) NewBirdPos() *util.Vector {
+	return util.NewVector(1, l.size.Y/2)
 }
 
 func (l *Level) AddBirds(count int) {
@@ -89,13 +55,13 @@ func (l *Level) AddBirds(count int) {
 
 		l.birds = append(l.birds, &Bird{
 			Pos:     *l.NewBirdPos(),
-			Vel:     *NewVector(SCROLL_SPEED, 0),
-			NextPos: *NewVector(0, 0),
+			Vel:     *util.NewVector(SCROLL_SPEED, 0),
+			NextPos: *util.NewVector(0, 0),
 		})
 	}
 }
 
-func (l *Level) FirstPylonAfterIdx(pos *Vector) int {
+func (l *Level) FirstPylonAfterIdx(pos *util.Vector) int {
 	// TODO not use GO
 	start := int(math.Max(float64(int(pos.X/float64(pylonSpacing))-1), 0))
 
@@ -107,11 +73,11 @@ func (l *Level) FirstPylonAfterIdx(pos *Vector) int {
 	return -1
 }
 
-func (l *Level) ClosestPylon(pos *Vector) Vector {
+func (l *Level) ClosestPylon(pos *util.Vector) util.Vector {
 	idx := l.FirstPylonAfterIdx(pos)
 
 	if idx == -1 {
-		return *NewVector(0, 0)
+		return *util.NewVector(0, 0)
 	}
 
 	nextX := l.pylons[idx].X - pos.X
@@ -133,26 +99,26 @@ func (l *Level) ClosestPylon(pos *Vector) Vector {
 	}
 }
 
-func (l *Level) FirstPylonAfter(pos *Vector) Vector {
+func (l *Level) FirstPylonAfter(pos *util.Vector) util.Vector {
 	idx := l.FirstPylonAfterIdx(pos)
 	if idx >= 0 {
 		return l.pylons[idx]
 	}
-	return *NewVector(0, 0)
+	return *util.NewVector(0, 0)
 
 	// TODO srsly?
-	// idx >= 0 ? l.pylons[idx] : *NewVector(0, 0)
+	// idx >= 0 ? l.pylons[idx] : *util.NewVector(0, 0)
 }
 
 func (l *Level) GetBirds() *[]*Bird {
 	return &l.birds
 }
 
-func (l *Level) GetPylons() []Vector {
+func (l *Level) GetPylons() []util.Vector {
 	return l.pylons
 }
 
-func (l *Level) GetSize() Vector {
+func (l *Level) GetSize() util.Vector {
 	return l.size
 }
 

@@ -1,8 +1,9 @@
 package main
 
 import (
-	neural "./neural"
-	problems "./problems"
+	neural "./src/neural"
+	flappy "./src/problems/flappy"
+	util "./src/util"
 	"fmt"
 	sdl "github.com/veandco/go-sdl2/sdl"
 	"math"
@@ -30,7 +31,7 @@ func nrn(name NeuronName) int {
 }
 
 type FBird struct {
-	bird  *problems.Bird
+	bird  *flappy.Bird
 	brain *neural.Net
 	bestX float64
 	dead  bool
@@ -51,14 +52,14 @@ func (birds Flock) Swap(c, r int) {
 }
 
 // will check if going from pos to next will collide
-func checkFlock(birds Flock, lvl *problems.Level) {
+func checkFlock(birds Flock, lvl *flappy.Level) {
 
 	collide := func(aX, bX, cX float64) bool {
 		// c.X == d.X
 		return aX-1 <= cX && bX+1 >= cX
 	}
 
-	hSize := float64(problems.PylonHole / 2)
+	hSize := float64(flappy.PylonHole / 2)
 
 	for c := range birds {
 		if birds[c].bird.Pos.Y >= lvl.GetSize().Y || birds[c].bird.Pos.Y < 1 {
@@ -84,7 +85,7 @@ func checkFlock(birds Flock, lvl *problems.Level) {
 
 }
 
-func thnikFlock(birds Flock, lvl *problems.Level) {
+func thnikFlock(birds Flock, lvl *flappy.Level) {
 	wg := make(chan struct{}, len(birds))
 
 	thinkBird := func(c int) {
@@ -114,7 +115,7 @@ func thnikFlock(birds Flock, lvl *problems.Level) {
 	}
 }
 
-func mutateFlock(birds Flock, lvl *problems.Level) {
+func mutateFlock(birds Flock, lvl *flappy.Level) {
 	sort.Sort(birds)
 
 	randNet := func() *neural.Net {
@@ -127,7 +128,7 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 		if birds[c].dead {
 			birds[c].dead = false
 			birds[c].bird.Pos = *lvl.NewBirdPos()
-			birds[c].bird.Vel = *problems.NewVector(problems.SCROLL_SPEED, 0)
+			birds[c].bird.Vel = *util.NewVector(flappy.SCROLL_SPEED, 0)
 
 			birds[c].brain = neural.Cross(best, randNet())
 
@@ -156,7 +157,7 @@ func main() {
 	var FPS float64 = 60.0
 	FRAME_TIME_MS := 1000 / FPS
 
-	lvl := problems.NewLevel(LVL_W, H)
+	lvl := flappy.NewLevel(LVL_W, H)
 
 	sdl.Init(sdl.INIT_EVERYTHING)
 
@@ -298,7 +299,7 @@ func main() {
 		}
 
 		pylons := lvl.GetPylons()
-		hSize := float64(problems.PylonHole) / 2.0
+		hSize := float64(flappy.PylonHole) / 2.0
 		for _, pylon := range pylons {
 			if !visible(pylon.X) {
 				continue
