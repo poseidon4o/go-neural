@@ -11,6 +11,23 @@ import (
 	"time"
 )
 
+type NeuronName int
+
+const (
+	diffY NeuronName = iota
+	diffX NeuronName = iota
+	velY  NeuronName = iota
+	H1    NeuronName = iota
+	H2    NeuronName = iota
+	H3    NeuronName = iota
+	H4    NeuronName = iota
+	jump  NeuronName = iota
+)
+
+func nrn(name NeuronName) int {
+	return int(name)
+}
+
 type FBird struct {
 	bird  *problems.Bird
 	brain *neural.Net
@@ -71,15 +88,15 @@ func thnikFlock(birds Flock, lvl *problems.Level) {
 
 	thinkBird := func(c int) {
 		next := lvl.FirstPylonAfter(&birds[c].bird.Pos)
-		diffY := next.Y - birds[c].bird.Pos.Y
-		diffX := next.X - birds[c].bird.Pos.X
+		diffYval := next.Y - birds[c].bird.Pos.Y
+		diffXval := next.X - birds[c].bird.Pos.X
 
-		birds[c].brain.Stimulate(0, diffY)
-		birds[c].brain.Stimulate(1, diffX)
-		birds[c].brain.Stimulate(2, birds[c].bird.Vel.Y)
+		birds[c].brain.Stimulate(nrn(diffY), diffYval)
+		birds[c].brain.Stimulate(nrn(diffX), diffXval)
+		birds[c].brain.Stimulate(nrn(velY), birds[c].bird.Vel.Y)
 
 		birds[c].brain.Step()
-		if birds[c].brain.ValueOf(7) > 0.75 {
+		if birds[c].brain.ValueOf(nrn(jump)) > 0.75 {
 			birds[c].bird.Vel.Y = -0.4
 		}
 
@@ -163,28 +180,28 @@ func main() {
 		nets[c] = neural.NewNet(8)
 
 		// diffY- to hidden
-		*nets[c].Synapse(0, 3) = 0.0
-		*nets[c].Synapse(0, 4) = 0.0
-		*nets[c].Synapse(0, 5) = 0.0
-		*nets[c].Synapse(0, 6) = 0.0
+		*nets[c].Synapse(nrn(diffY), nrn(H1)) = 0.0
+		*nets[c].Synapse(nrn(diffY), nrn(H2)) = 0.0
+		*nets[c].Synapse(nrn(diffY), nrn(H3)) = 0.0
+		*nets[c].Synapse(nrn(diffY), nrn(H4)) = 0.0
 
 		// diffX- to hidden
-		*nets[c].Synapse(1, 3) = 0.0
-		*nets[c].Synapse(1, 4) = 0.0
-		*nets[c].Synapse(1, 5) = 0.0
-		*nets[c].Synapse(1, 6) = 0.0
+		*nets[c].Synapse(nrn(diffX), nrn(H1)) = 0.0
+		*nets[c].Synapse(nrn(diffX), nrn(H2)) = 0.0
+		*nets[c].Synapse(nrn(diffX), nrn(H3)) = 0.0
+		*nets[c].Synapse(nrn(diffX), nrn(H4)) = 0.0
 
 		// velY - to hidden
-		*nets[c].Synapse(2, 3) = 0.0
-		*nets[c].Synapse(2, 4) = 0.0
-		*nets[c].Synapse(2, 5) = 0.0
-		*nets[c].Synapse(2, 6) = 0.0
+		*nets[c].Synapse(nrn(velY), nrn(H1)) = 0.0
+		*nets[c].Synapse(nrn(velY), nrn(H2)) = 0.0
+		*nets[c].Synapse(nrn(velY), nrn(H3)) = 0.0
+		*nets[c].Synapse(nrn(velY), nrn(H4)) = 0.0
 
 		// hidden to output
-		*nets[c].Synapse(3, 7) = 0.0
-		*nets[c].Synapse(4, 7) = 0.0
-		*nets[c].Synapse(5, 7) = 0.0
-		*nets[c].Synapse(6, 7) = 0.0
+		*nets[c].Synapse(nrn(H1), nrn(jump)) = 0.0
+		*nets[c].Synapse(nrn(H2), nrn(jump)) = 0.0
+		*nets[c].Synapse(nrn(H3), nrn(jump)) = 0.0
+		*nets[c].Synapse(nrn(H4), nrn(jump)) = 0.0
 
 		nets[c].Randomize()
 	}
