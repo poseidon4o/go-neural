@@ -94,6 +94,8 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 
 	best := birds[0].brain
 
+	// TODO move dead check out of this loop
+	// TODO check if the bird jumps trough the pylon - kill
 	for c := range birds {
 		brd := &birds[c]
 		pos := brd.bird.Pos()
