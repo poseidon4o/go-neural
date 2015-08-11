@@ -125,9 +125,11 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+	doDraw := true
+
 	W := 1500
 	H := 800
-	LVL_W := W * 10
+	LVL_W := W * 50
 	fmt.Println(W, H)
 	var FPS float64 = 60.0
 
@@ -149,6 +151,7 @@ func main() {
 
 	rect := sdl.Rect{0, 0, 5, 5}
 	clearRect := sdl.Rect{0, 0, int32(W), int32(H)}
+	surface.FillRect(&clearRect, 0xffffffff)
 
 	bcount := 10000
 
@@ -220,7 +223,9 @@ func main() {
 			rect.Y = int32(brd.Pos().Y)
 			rect.W = 5
 			rect.H = 5
-			surface.FillRect(&rect, 0xffff0000)
+			if doDraw {
+				surface.FillRect(&rect, 0xffff0000)
+			}
 		}
 
 		hSize := float64(problems.PylonHole) / 2.0
@@ -235,33 +240,45 @@ func main() {
 
 			// top part
 			rect.H = int32(pylon.Y - hSize)
-			surface.FillRect(&rect, 0xff00ff00)
+			if doDraw {
+				surface.FillRect(&rect, 0xff00ff00)
+			}
 
 			// bottom part
 			rect.Y = int32(pylon.Y + hSize)
 			rect.H = int32(float64(H) - (pylon.Y + hSize))
-			surface.FillRect(&rect, 0xff00ff00)
+			if doDraw {
+				surface.FillRect(&rect, 0xff00ff00)
+			}
 
 			rect.Y = int32(pylon.Y)
 			rect.W = 3
 			rect.H = 3
-			surface.FillRect(&rect, 0xff0000ff)
+			if doDraw {
+				surface.FillRect(&rect, 0xff0000ff)
+			}
 		}
 
 		elapsed := time.Since(start)
-		time.Sleep(time.Millisecond * time.Duration(1000.0/FPS))
+
+		if doDraw && frameTime < 1000.0/FPS {
+			time.Sleep(time.Millisecond * time.Duration(1000.0/FPS))
+		}
+
 		start = time.Now()
 
 		frameTime = frameTime*0.25 + float64(elapsed.Nanoseconds())*0.75
 
 		if frame > 60 {
 			frame = 0
-			fmt.Printf("fps ast: %s\tfps average %f\tcompletion %f%%\n", elapsed, frameTime/1000000.0, flock[0].bestX/float64(LVL_W)*100.0)
+			fmt.Printf("fps last: %s\tfps average %f\tcompletion %f%%\n", elapsed, frameTime/1000000.0, flock[0].bestX/float64(LVL_W)*100.0)
 		}
 
 		window.UpdateSurface()
-		lvl.Step(1000.0 / FPS)
-		surface.FillRect(&clearRect, 0xffffffff)
+		lvl.Step(float64(elapsed.Nanoseconds()) / 1000000.0)
+		if doDraw {
+			surface.FillRect(&clearRect, 0xffffffff)
+		}
 
 		stop := false
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -274,6 +291,9 @@ func main() {
 					offset = int(math.Max(0, float64(offset-step)))
 				case sdl.K_RIGHT:
 					offset = int(math.Min(float64(LVL_W-W), float64(offset+step)))
+				case sdl.K_SPACE:
+					doDraw = !doDraw
+					surface.FillRect(&clearRect, 0xffaaaaaa)
 				}
 			}
 		}
