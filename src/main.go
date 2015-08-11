@@ -70,7 +70,6 @@ func thnikFlock(birds Flock, lvl *problems.Level) {
 	wg := make(chan struct{}, len(birds))
 
 	thinkBird := func(c int) {
-		birds[c].bestX = math.Max(birds[c].bird.Pos.X, birds[c].bestX)
 		next := lvl.FirstPylonAfter(&birds[c].bird.Pos)
 		diffY := next.Y - birds[c].bird.Pos.Y
 		diffX := next.X - birds[c].bird.Pos.X
@@ -106,8 +105,6 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 
 	best := birds[0].brain
 
-	// TODO move dead check out of this loop
-	// TODO check if the bird jumps trough the pylon - kill
 	for c := range birds {
 		if birds[c].dead {
 			birds[c].dead = false
@@ -117,10 +114,13 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 			birds[c].brain = neural.Cross(best, randNet())
 
 			if neural.Chance(0.1) {
+				// penalize best achievement due to mutation
+				birds[c].bestX *= 0.66
 				birds[c].brain.Mutate(0.33)
 			}
 		} else {
 			birds[c].bird.Pos = birds[c].bird.NextPos
+			birds[c].bestX = math.Max(birds[c].bird.Pos.X, birds[c].bestX)
 		}
 	}
 
