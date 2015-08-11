@@ -2,6 +2,7 @@ package problems
 
 import (
 	neural "../neural"
+	"math"
 )
 
 type Vector struct {
@@ -40,7 +41,9 @@ func NewVector(x, y float64) *Vector {
 }
 
 type Bird struct {
-	pos, vel Vector
+	Pos     Vector
+	Vel     Vector
+	NextPos Vector
 }
 
 const pylonSpacing int = 150
@@ -56,14 +59,6 @@ type Level struct {
 	size   Vector
 	pylons []Vector
 	birds  []*Bird
-}
-
-func (b *Bird) Pos() *Vector {
-	return &b.pos
-}
-
-func (b *Bird) Vel() *Vector {
-	return &b.vel
 }
 
 func NewLevel(w, h int) *Level {
@@ -92,10 +87,60 @@ func (l *Level) AddBirds(count int) {
 	for c := 0; c < count; c++ {
 
 		l.birds = append(l.birds, &Bird{
-			pos: *l.NewBirdPos(),
-			vel: *NewVector(0.1, 0),
+			Pos:     *l.NewBirdPos(),
+			Vel:     *NewVector(0.1, 0),
+			NextPos: *NewVector(0, 0),
 		})
 	}
+}
+
+func (l *Level) FirstPylonAfterIdx(pos *Vector) int {
+	// TODO not use GO
+	start := int(math.Max(float64(int(pos.X/float64(pylonSpacing))-1), 0))
+
+	for ; start < len(l.pylons); start++ {
+		if l.pylons[start].X > pos.X {
+			return start
+		}
+	}
+	return -1
+}
+
+func (l *Level) ClosestPylon(pos *Vector) Vector {
+	idx := l.FirstPylonAfterIdx(pos)
+
+	if idx == -1 {
+		return *NewVector(0, 0)
+	}
+
+	nextX := l.pylons[idx].X - pos.X
+	// TODO srsly?
+	//prevX := idx > 0 ? pos.X - l.pylons[idx - 1] : pylonSpacing * 2
+
+	var prevX float64 = 0
+	if idx > 0 {
+		prevX = pos.X - l.pylons[idx-1].X
+	} else {
+		// will be bigger than any spacing to next pylon
+		prevX = float64(pylonSpacing) * 2
+	}
+
+	if prevX < nextX {
+		return l.pylons[idx-1]
+	} else {
+		return l.pylons[idx]
+	}
+}
+
+func (l *Level) FirstPylonAfter(pos *Vector) Vector {
+	idx := l.FirstPylonAfterIdx(pos)
+	if idx >= 0 {
+		return l.pylons[idx]
+	}
+	return *NewVector(0, 0)
+
+	// TODO srsly?
+	// idx >= 0 ? l.pylons[idx] : *NewVector(0, 0)
 }
 
 func (l *Level) GetBirds() *[]*Bird {
@@ -113,9 +158,10 @@ func (l *Level) GetSize() Vector {
 func (l *Level) Step(dt float64) {
 	for c := range l.birds {
 		// position += timestep * (velocity + timestep * acceleration / 2);
-		l.birds[c].pos = *l.birds[c].pos.Add(G_FORCE.Scale(dt / 2).Add(&l.birds[c].vel).Scale(dt))
+		// TODO not use go
+		l.birds[c].NextPos = *l.birds[c].Pos.Add(G_FORCE.Scale(dt / 2).Add(&l.birds[c].Vel).Scale(dt))
 
 		// velocity += timestep * acceleration;
-		l.birds[c].vel = *l.birds[c].vel.Add(G_FORCE.Scale(dt))
+		l.birds[c].Vel = *l.birds[c].Vel.Add(G_FORCE.Scale(dt))
 	}
 }
