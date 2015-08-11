@@ -115,7 +115,7 @@ func mutateFlock(birds Flock, lvl *problems.Level) {
 
 			if neural.Chance(0.1) {
 				// penalize best achievement due to mutation
-				birds[c].bestX *= 0.66
+				birds[c].bestX *= 0.99
 				birds[c].brain.Mutate(0.33)
 			}
 		} else {
