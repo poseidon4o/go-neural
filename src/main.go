@@ -330,7 +330,7 @@ func main() {
 		}
 
 		elapsed := time.Since(start)
-		frameMs := float64(elapsed / 1000000)
+		frameMs := float64(elapsed) / 1000000
 
 		averageFrameTime = averageFrameTime*0.9 + float64(elapsed.Nanoseconds())*0.1
 		completion := flock[0].bestX / float64(LVL_W) * 100.0
@@ -342,7 +342,7 @@ func main() {
 
 		if frame > int(FPS) {
 			frame = 0
-			fmt.Printf("ftime last: %s\tftime average %f\tcompletion %f%%\n", elapsed, frameMs, completion)
+			fmt.Printf("ftime last: %f\tftime average %f\tcompletion %f%%\n", frameMs, averageFrameTime/1000000, completion)
 		}
 
 		// sleep only if drawing and there is time to sleep more than 3ms
