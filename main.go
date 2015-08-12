@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	flappy "github.com/poseidon4o/go-neural/src/problems/flappy"
 	mario "github.com/poseidon4o/go-neural/src/problems/mario"
 	util "github.com/poseidon4o/go-neural/src/util"
 	sdl "github.com/veandco/go-sdl2/sdl"
@@ -54,11 +55,22 @@ func main() {
 	clearRect := sdl.Rect{0, 0, int32(W), int32(H)}
 	surface.FillRect(&clearRect, 0xffffffff)
 
-	mario := mario.NewMario(10000, util.NewVector(float64(LVL_W), float64(H)))
+	g := flappy.NewFlappy(10000, util.NewVector(float64(LVL_W), float64(H)))
+	g.Completed()
+	game := mario.NewMario(10000, util.NewVector(float64(LVL_W), float64(H)))
 
 	offset := 0
-	visible := func(pos *util.Vector) bool {
-		return pos.X >= float64(offset) && pos.X < float64(offset+W)
+	visible := func(pos, size *util.Vector) bool {
+
+		// r1 := sdl.Rect{int32(pos.X), int32(pos.Y), int32(pos.X + size.X), int32(pos.Y + size.Y)}
+		// r2 := sdl.Rect{int32(offset), 0, int32(offset + W), int32(H)}
+		// return !(r2.X > r1.W || r2.W < r1.X || r2.Y > r1.H || r2.H < r1.Y)
+
+		// so beautiful
+		return !(float64(offset) > pos.X+size.X ||
+			float64(offset+W) < pos.X ||
+			0 > pos.Y+size.Y ||
+			float64(H) < pos.Y)
 	}
 
 	toScreen := func(pos, size *util.Vector) *sdl.Rect {
@@ -70,8 +82,8 @@ func main() {
 		}
 	}
 
-	mario.SetDrawRectCb(func(pos, size *util.Vector, color uint32) {
-		if visible(pos) {
+	game.SetDrawRectCb(func(pos, size *util.Vector, color uint32) {
+		if visible(pos, size) {
 			surface.FillRect(toScreen(pos, size), color)
 		}
 	})
@@ -84,12 +96,12 @@ func main() {
 	for {
 		start = time.Now()
 
-		mario.LogicTick(1 / FPS)
+		game.LogicTick(1 / FPS)
 
 		if doDraw {
 			window.UpdateSurface()
 			surface.FillRect(&clearRect, 0xffffffff)
-			mario.DrawTick()
+			game.DrawTick()
 		} else if frame%10 == 0 {
 			// update only 10% of the frames
 			window.UpdateSurface()
@@ -113,7 +125,7 @@ func main() {
 				case sdl.K_ESCAPE:
 					stop = true
 				case sdl.K_END:
-					offset = int(math.Max(math.Min(float64(LVL_W-W), mario.Completed()*float64(LVL_W)-float64(W)/2), 0))
+					offset = int(math.Max(math.Min(float64(LVL_W-W), game.Completed()*float64(LVL_W)-float64(W)/2), 0))
 				case sdl.K_HOME:
 					offset = 0
 				}
@@ -131,14 +143,14 @@ func main() {
 
 		averageFrameTime = averageFrameTime*0.9 + float64(elapsed.Nanoseconds())*0.1
 
-		if mario.Done() {
+		if game.Done() {
 			fmt.Println("Done")
 			break
 		}
 
 		if frame > int(FPS) {
 			frame = 0
-			fmt.Printf("ftime last: %f\tftime average %f\tcompletion %f%%\n", frameMs, averageFrameTime/1000000, mario.Completed()*100)
+			fmt.Printf("ftime last: %f\tftime average %f\tcompletion %f%%\n", frameMs, averageFrameTime/1000000, game.Completed()*100)
 		}
 
 		// sleep only if drawing and there is time to sleep more than 3ms
