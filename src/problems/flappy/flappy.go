@@ -25,6 +25,27 @@ func nrn(name NeuronName) int {
 	return int(name)
 }
 
+type FBird struct {
+	bird  *Bird
+	brain *neural.Net
+	bestX float64
+	dead  bool
+}
+
+type Flock []FBird
+
+func (birds Flock) Len() int {
+	return len(birds)
+}
+
+func (birds Flock) Less(c, r int) bool {
+	return birds[c].bestX > birds[r].bestX
+}
+
+func (birds Flock) Swap(c, r int) {
+	birds[c], birds[r] = birds[r], birds[c]
+}
+
 type Flappy struct {
 	birds    Flock
 	lvl      Level
@@ -134,27 +155,6 @@ func NewFlappy(birdCount int, size *util.Vector) *Flappy {
 		drawCb:   func(pos, size *util.Vector, color uint32) {},
 		drawSize: 5,
 	}
-}
-
-type FBird struct {
-	bird  *Bird
-	brain *neural.Net
-	bestX float64
-	dead  bool
-}
-
-type Flock []FBird
-
-func (birds Flock) Len() int {
-	return len(birds)
-}
-
-func (birds Flock) Less(c, r int) bool {
-	return birds[c].bestX > birds[r].bestX
-}
-
-func (birds Flock) Swap(c, r int) {
-	birds[c], birds[r] = birds[r], birds[c]
 }
 
 // will check if going from pos to next will collide
