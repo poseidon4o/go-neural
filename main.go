@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	flappy "github.com/poseidon4o/go-neural/src/problems/flappy"
+	mario "github.com/poseidon4o/go-neural/src/problems/mario"
 	util "github.com/poseidon4o/go-neural/src/util"
 	sdl "github.com/veandco/go-sdl2/sdl"
 	"math"
@@ -54,7 +54,7 @@ func main() {
 	clearRect := sdl.Rect{0, 0, int32(W), int32(H)}
 	surface.FillRect(&clearRect, 0xffffffff)
 
-	flappy := flappy.NewFlappy(10000, util.NewVector(float64(LVL_W), float64(H)))
+	mario := mario.NewMario(10000, util.NewVector(float64(LVL_W), float64(H)))
 
 	offset := 0
 	visible := func(pos *util.Vector) bool {
@@ -70,7 +70,7 @@ func main() {
 		}
 	}
 
-	flappy.SetDrawRectCb(func(pos, size *util.Vector, color uint32) {
+	mario.SetDrawRectCb(func(pos, size *util.Vector, color uint32) {
 		if visible(pos) {
 			surface.FillRect(toScreen(pos, size), color)
 		}
@@ -84,12 +84,12 @@ func main() {
 	for {
 		start = time.Now()
 
-		flappy.LogicTick(1 / FPS)
+		mario.LogicTick(1 / FPS)
 
 		if doDraw {
 			window.UpdateSurface()
 			surface.FillRect(&clearRect, 0xffffffff)
-			flappy.DrawTick()
+			mario.DrawTick()
 		} else if frame%10 == 0 {
 			// update only 10% of the frames
 			window.UpdateSurface()
@@ -113,7 +113,7 @@ func main() {
 				case sdl.K_ESCAPE:
 					stop = true
 				case sdl.K_END:
-					offset = int(math.Max(math.Min(float64(LVL_W-W), flappy.Completed()*float64(LVL_W)-float64(W)/2), 0))
+					offset = int(math.Max(math.Min(float64(LVL_W-W), mario.Completed()*float64(LVL_W)-float64(W)/2), 0))
 				case sdl.K_HOME:
 					offset = 0
 				}
@@ -131,14 +131,14 @@ func main() {
 
 		averageFrameTime = averageFrameTime*0.9 + float64(elapsed.Nanoseconds())*0.1
 
-		if flappy.Done() {
+		if mario.Done() {
 			fmt.Println("Done")
 			break
 		}
 
 		if frame > int(FPS) {
 			frame = 0
-			fmt.Printf("ftime last: %f\tftime average %f\tcompletion %f%%\n", frameMs, averageFrameTime/1000000, flappy.Completed()*100)
+			fmt.Printf("ftime last: %f\tftime average %f\tcompletion %f%%\n", frameMs, averageFrameTime/1000000, mario.Completed()*100)
 		}
 
 		// sleep only if drawing and there is time to sleep more than 3ms
