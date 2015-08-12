@@ -147,6 +147,7 @@ func NewFlappy(birdCount int, size *util.Vector) *Flappy {
 		flock[c].bird = level.birds[c]
 		flock[c].brain = nets[c]
 		flock[c].bestX = 0
+		flock[c].dead = false
 	}
 
 	return &Flappy{
