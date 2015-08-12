@@ -1,9 +1,33 @@
 package mario
 
 import (
+	"fmt"
 	neural "github.com/poseidon4o/go-neural/src/neural"
 	util "github.com/poseidon4o/go-neural/src/util"
+	"math"
+	"sort"
 )
+
+type NeuronName int
+
+const (
+	posX      NeuronName = iota
+	H1        NeuronName = iota
+	H2        NeuronName = iota
+	H3        NeuronName = iota
+	H4        NeuronName = iota
+	H5        NeuronName = iota
+	H6        NeuronName = iota
+	H7        NeuronName = iota
+	H8        NeuronName = iota
+	jump      NeuronName = iota
+	xMove     NeuronName = iota
+	NRN_COUNT int        = iota
+)
+
+func nrn(name NeuronName) int {
+	return int(name)
+}
 
 type MarioNode struct {
 	fig   *Figure
@@ -12,15 +36,29 @@ type MarioNode struct {
 	dead  bool
 }
 
+type MarioCol []MarioNode
+
+func (figs MarioCol) Len() int {
+	return len(figs)
+}
+
+func (figs MarioCol) Less(c, r int) bool {
+	return figs[c].bestX > figs[r].bestX
+}
+
+func (figs MarioCol) Swap(c, r int) {
+	figs[c], figs[r] = figs[r], figs[c]
+}
+
 type Mario struct {
-	figures  []MarioNode
+	figures  MarioCol
 	lvl      Level
 	drawCb   func(pos, size *util.Vector, color uint32)
 	drawSize int
 }
 
 func (m *Mario) Completed() float64 {
-	return 0
+	return m.figures[0].fig.pos.X / m.lvl.size.X
 }
 
 func (m *Mario) Done() bool {
@@ -32,22 +70,58 @@ func (m *Mario) SetDrawRectCb(cb func(pos, size *util.Vector, color uint32)) {
 }
 
 func (m *Mario) LogicTick(dt float64) {
+	m.lvl.Step(dt)
+	m.checkStep()
+	m.mutateStep()
+	m.thnikStep()
+}
 
+func (m *MarioNode) Jump() {
+	m.fig.Jump()
+}
+
+func (m *MarioNode) Move(dir int) {
+	m.fig.Move(dir)
+}
+
+func (m *Mario) Figs() MarioCol {
+	return m.figures
 }
 
 func NewMario(figCount int, size *util.Vector) *Mario {
+	fmt.Println("")
 	level := NewLevel(int(size.X), int(size.Y))
-	level.AddFigures(1)
+	level.AddFigures(figCount)
 
-	figs := make([]MarioNode, 1)
-	figs[0].fig = level.figures[0]
-	figs[0].brain = nil
+	nets := make([]*neural.Net, figCount, figCount)
+	for c := range nets {
+		nets[c] = neural.NewNet(NRN_COUNT)
+
+		for r := 0; r < (nrn(H8) - nrn(H1)); r++ {
+			// input to hidden
+			*nets[c].Synapse(nrn(posX), r+nrn(H1)) = 0.0
+
+			// hiden to output
+			*nets[c].Synapse(r+nrn(H1), nrn(jump)) = 0.0
+			*nets[c].Synapse(r+nrn(H1), nrn(xMove)) = 0.0
+		}
+
+		nets[c].Randomize()
+	}
+
+	figs := make(MarioCol, figCount, figCount)
+	for c := range figs {
+		figs[c].brain = nets[c]
+		figs[c].dead = false
+		figs[c].bestX = 0
+		figs[c].fig = level.figures[c]
+	}
 
 	return &Mario{
 		figures:  figs,
 		lvl:      *level,
 		drawCb:   func(pos, size *util.Vector, color uint32) {},
-		drawSize: 5,
+		drawSize: 10,
 	}
 }
 
@@ -73,6 +147,95 @@ func (m *Mario) DrawTick() {
 	}
 
 	for c := range m.figures {
-		m.drawCb(&m.figures[c].fig.Pos, size, blue)
+		m.drawCb(&m.figures[c].fig.pos, size, blue)
 	}
+}
+
+func (m *Mario) checkStep() {
+	// fmt.Println(fig.pos)
+	for c := range m.figures {
+		fig := m.figures[c].fig
+
+		if fig.nextPos.Y > m.lvl.size.Y || fig.nextPos.Y < 0 {
+			m.figures[c].dead = true
+			continue
+		}
+
+		if fig.nextPos.X < 0 {
+			fig.nextPos.X = 0
+		} else if fig.nextPos.X > m.lvl.size.X {
+			fig.nextPos.X = m.lvl.size.X
+		}
+
+		block := m.lvl.FloorAt(&fig.pos)
+
+		if fig.nextPos.Y < block.Y {
+			fig.pos = fig.nextPos
+		} else {
+			// land on block
+			fig.vel.Y = 0
+			fig.pos.Y = block.Y - 1
+			fig.pos.X = fig.nextPos.X
+			fig.Land()
+		}
+	}
+}
+
+func (m *Mario) thnikStep() {
+	wg := make(chan struct{}, len(m.figures))
+
+	thinkBird := func(c int) {
+		m.figures[c].brain.Stimulate(nrn(posX), m.figures[c].fig.pos.X)
+
+		m.figures[c].brain.Step()
+
+		if m.figures[c].brain.ValueOf(nrn(jump)) > 0.75 {
+			m.figures[c].fig.Jump()
+		}
+
+		xMoveValue := m.figures[c].brain.ValueOf(nrn(xMove))
+		if math.Abs(xMoveValue) > 0.75 {
+			m.figures[c].fig.Move(int(xMoveValue * 10))
+		}
+
+		m.figures[c].brain.Clear()
+		wg <- struct{}{}
+	}
+
+	for c := 0; c < len(m.figures); c++ {
+		go thinkBird(c)
+	}
+
+	for c := 0; c < len(m.figures); c++ {
+		<-wg
+	}
+}
+
+func (m *Mario) mutateStep() {
+	sort.Sort(m.figures)
+
+	randNet := func() *neural.Net {
+		return m.figures[int(neural.RandMax(float64(len(m.figures))))].brain
+	}
+
+	best := m.figures[0].brain
+
+	for c := range m.figures {
+		if m.figures[c].dead {
+			m.figures[c].dead = false
+			m.figures[c].fig.pos = *m.lvl.NewFigurePos()
+			m.figures[c].fig.vel = *util.NewVector(0, 0)
+
+			m.figures[c].brain = neural.Cross(best, randNet())
+
+			if neural.Chance(0.1) {
+				// penalize best achievement due to mutation
+				m.figures[c].bestX *= 0.99
+				m.figures[c].brain.Mutate(0.33)
+			}
+		} else {
+			m.figures[c].bestX = math.Max(m.figures[c].fig.pos.X, m.figures[c].bestX)
+		}
+	}
+
 }
