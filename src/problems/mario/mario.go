@@ -12,6 +12,9 @@ type NeuronName int
 
 const (
 	posX      NeuronName = iota
+	posY      NeuronName = iota
+	velY      NeuronName = iota
+	velX      NeuronName = iota
 	H1        NeuronName = iota
 	H2        NeuronName = iota
 	H3        NeuronName = iota
@@ -20,6 +23,14 @@ const (
 	H6        NeuronName = iota
 	H7        NeuronName = iota
 	H8        NeuronName = iota
+	R1        NeuronName = iota
+	R2        NeuronName = iota
+	R3        NeuronName = iota
+	R4        NeuronName = iota
+	R5        NeuronName = iota
+	R6        NeuronName = iota
+	R7        NeuronName = iota
+	R8        NeuronName = iota
 	jump      NeuronName = iota
 	xMove     NeuronName = iota
 	NRN_COUNT int        = iota
@@ -30,10 +41,11 @@ func nrn(name NeuronName) int {
 }
 
 type MarioNode struct {
-	fig   *Figure
-	brain *neural.Net
-	bestX float64
-	dead  bool
+	fig        *Figure
+	brain      *neural.Net
+	bestX      float64
+	dead       bool
+	idleFrames uint32
 }
 
 type MarioCol []MarioNode
@@ -58,7 +70,7 @@ type Mario struct {
 }
 
 func (m *Mario) Completed() float64 {
-	return m.figures[0].fig.pos.X / m.lvl.size.X
+	return m.figures[0].bestX / m.lvl.size.X
 }
 
 func (m *Mario) Done() bool {
@@ -98,12 +110,21 @@ func NewMario(figCount int, size *util.Vector) *Mario {
 		nets[c] = neural.NewNet(NRN_COUNT)
 
 		for r := 0; r < (nrn(H8) - nrn(H1)); r++ {
-			// input to hidden
+			// input to H
 			*nets[c].Synapse(nrn(posX), r+nrn(H1)) = 0.0
+			*nets[c].Synapse(nrn(posY), r+nrn(H1)) = 0.0
+			*nets[c].Synapse(nrn(velX), r+nrn(H1)) = 0.0
+			*nets[c].Synapse(nrn(velY), r+nrn(H1)) = 0.0
 
-			// hiden to output
-			*nets[c].Synapse(r+nrn(H1), nrn(jump)) = 0.0
-			*nets[c].Synapse(r+nrn(H1), nrn(xMove)) = 0.0
+			// R to output
+			*nets[c].Synapse(r+nrn(R1), nrn(jump)) = 0.0
+			*nets[c].Synapse(r+nrn(R1), nrn(xMove)) = 0.0
+		}
+
+		for r := 0; r < (nrn(H8) - nrn(H1)); r++ {
+			for q := 0; q < (nrn(H8) - nrn(H1)); q++ {
+				*nets[c].Synapse(r+nrn(H1), q+nrn(R1)) = 0.0
+			}
 		}
 
 		nets[c].Randomize()
@@ -141,8 +162,10 @@ func (m *Mario) DrawTick() {
 
 	for c := range m.lvl.blocks {
 		for r := range m.lvl.blocks[c] {
-			m.drawCb(&m.lvl.blocks[c][r], blSize, red)
-			m.drawCb(m.lvl.blocks[c][r].Add(translate), blSizeSmall, green)
+			if m.lvl.blocks[c][r] != nil {
+				m.drawCb(m.lvl.blocks[c][r], blSize, red)
+				m.drawCb(m.lvl.blocks[c][r].Add(translate), blSizeSmall, green)
+			}
 		}
 	}
 
@@ -152,7 +175,6 @@ func (m *Mario) DrawTick() {
 }
 
 func (m *Mario) checkStep() {
-	// fmt.Println(fig.pos)
 	for c := range m.figures {
 		fig := m.figures[c].fig
 
@@ -169,7 +191,7 @@ func (m *Mario) checkStep() {
 
 		block := m.lvl.FloorAt(&fig.pos)
 
-		if fig.nextPos.Y < block.Y {
+		if block == nil || fig.nextPos.Y < block.Y {
 			fig.pos = fig.nextPos
 		} else {
 			// land on block
@@ -186,6 +208,9 @@ func (m *Mario) thnikStep() {
 
 	thinkBird := func(c int) {
 		m.figures[c].brain.Stimulate(nrn(posX), m.figures[c].fig.pos.X)
+		m.figures[c].brain.Stimulate(nrn(posY), m.figures[c].fig.pos.Y)
+		m.figures[c].brain.Stimulate(nrn(velX), m.figures[c].fig.vel.X)
+		m.figures[c].brain.Stimulate(nrn(velY), m.figures[c].fig.vel.Y)
 
 		m.figures[c].brain.Step()
 
@@ -220,21 +245,39 @@ func (m *Mario) mutateStep() {
 
 	best := m.figures[0].brain
 
+	var idleThreshold uint32 = 600
+
 	for c := range m.figures {
 		if m.figures[c].dead {
 			m.figures[c].dead = false
 			m.figures[c].fig.pos = *m.lvl.NewFigurePos()
 			m.figures[c].fig.vel = *util.NewVector(0, 0)
 
-			m.figures[c].brain = neural.Cross(best, randNet())
-
-			if neural.Chance(0.1) {
-				// penalize best achievement due to mutation
-				m.figures[c].bestX *= 0.99
-				m.figures[c].brain.Mutate(0.33)
+			if m.figures[c].idleFrames >= idleThreshold {
+				m.figures[c].brain.Mutate(0.75)
+				m.figures[c].bestX *= 0.25
+			} else {
+				m.figures[c].brain = neural.Cross(best, randNet())
+				if neural.Chance(0.01) {
+					// penalize best achievement due to mutation
+					m.figures[c].bestX *= 0.8
+					m.figures[c].brain.Mutate(0.25)
+				}
 			}
+
+			m.figures[c].idleFrames = 0
+
 		} else {
-			m.figures[c].bestX = math.Max(m.figures[c].fig.pos.X, m.figures[c].bestX)
+			if m.figures[c].fig.pos.X > m.figures[c].bestX {
+				m.figures[c].bestX = m.figures[c].fig.pos.X
+			} else {
+				m.figures[c].idleFrames++
+				if m.figures[c].idleFrames >= 600 {
+					m.figures[c].dead = true
+					c--
+				}
+			}
+
 		}
 	}
 
