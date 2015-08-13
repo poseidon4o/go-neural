@@ -1,6 +1,7 @@
 package mario
 
 import (
+	neural "github.com/poseidon4o/go-neural/src/neural"
 	util "github.com/poseidon4o/go-neural/src/util"
 	"math"
 )
@@ -12,7 +13,7 @@ var G_FORCE util.Vector = util.Vector{
 	Y: G_CONST,
 }
 
-const BLOCK_SIZE int = 24
+const BLOCK_SIZE int = 25
 
 var JUMP_FORCE util.Vector = util.Vector{
 	X: 0,
@@ -32,7 +33,7 @@ type Figure struct {
 }
 
 func (m *Figure) Jump() {
-	if m.jumps >= 3 {
+	if m.jumps >= 1 {
 		return
 	}
 	m.jumps++
@@ -54,52 +55,76 @@ func (f *Figure) Move(dir int) {
 
 type Level struct {
 	size    util.Vector
-	blocks  [][]util.Vector
+	blocks  [][]*util.Vector
 	figures []*Figure
 }
 
+func (l *Level) makeHole(c *int) {
+	*c += 3 // int(3 + neural.RandMax(2))
+}
+
+func (l *Level) makeObstacle(c *int) {
+	*c--
+}
+
+func (l *Level) makeGround(c *int) {
+	r := int(l.size.Y/float64(BLOCK_SIZE)) - 1
+
+	l.blocks[*c][r] = util.NewVector(float64(*c*BLOCK_SIZE), float64(r*BLOCK_SIZE))
+}
+
 func NewLevel(w, h int) *Level {
+	blockH := h / BLOCK_SIZE
+	blockW := w / BLOCK_SIZE
+
 	lvl := &Level{
 		size:    *util.NewVector(float64(w), float64(h)),
-		blocks:  make([][]util.Vector, 0),
+		blocks:  make([][]*util.Vector, blockW, blockW),
 		figures: make([]*Figure, 0),
 	}
 
-	// TODO generate level
-	for c := 0; c < w; c += BLOCK_SIZE {
-		col := make([]util.Vector, 1, 1)
-		col[0] = *util.NewVector(float64(c), float64(h-BLOCK_SIZE))
-		lvl.blocks = append(lvl.blocks, col)
+	for c := 0; c < blockW; c++ {
+		lvl.blocks[c] = make([]*util.Vector, blockH, blockH)
+		for r := 0; r < blockH; r++ {
+			lvl.blocks[c][r] = nil
+		}
+	}
+
+	for c, obs := 0, 1; c < blockW; c, obs = c+1, obs+1 {
+
+		pr := c
+		if obs%10 == 0 {
+			if neural.Chance(0.5) {
+				lvl.makeHole(&c)
+			} else {
+				lvl.makeObstacle(&c)
+			}
+		} else {
+			lvl.makeGround(&c)
+		}
+		obs += c - pr
 	}
 
 	return lvl
 }
 
 func (l *Level) FloorAt(pos *util.Vector) *util.Vector {
-	idx := int(pos.X / float64(BLOCK_SIZE))
+	wIdx := int(pos.X / float64(BLOCK_SIZE))
+	hIdx := int(pos.Y / float64(BLOCK_SIZE))
 
-	if idx < 0 || idx >= len(l.blocks) {
-		return util.NewVector(0, 0)
+	if wIdx < 0 || wIdx >= len(l.blocks) || hIdx < 0 || hIdx >= len(l.blocks[0]) {
+		return nil
 	}
 
-	for c := len(l.blocks[idx]) - 1; c >= 0; c-- {
-		if pos.Y < l.blocks[idx][c].Y {
-			// we are above the block
-			if c-1 >= 0 && pos.Y > l.blocks[idx][c-1].Y {
-				// has next block and we are below it
-				return &l.blocks[idx][c]
-			} else if c-1 < 0 {
-				// dont have next block
-				return &l.blocks[idx][c]
-			}
-		}
+	if hIdx+1 >= len(l.blocks[0]) {
+		return nil
 	}
 
-	return util.NewVector(0, 0)
+	return l.blocks[wIdx][hIdx+1]
 }
 
 func (l *Level) NewFigurePos() *util.Vector {
-	return util.NewVector(1, l.FloorAt(util.NewVector(1, 1)).Y-float64(BLOCK_SIZE))
+	return util.NewVector(1, 1)
 }
 
 func (l *Level) AddFigures(count int) {
@@ -121,6 +146,6 @@ func (l *Level) Step(dt float64) {
 
 		// velocity += timestep * acceleration;
 		l.figures[c].vel = *l.figures[c].vel.Add(G_FORCE.Scale(dt))
-		l.figures[c].vel.X *= 0.9
+		l.figures[c].vel.X *= (1 - 3*dt)
 	}
 }
