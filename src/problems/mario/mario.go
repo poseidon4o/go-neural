@@ -121,7 +121,7 @@ func NewMario(figCount int, size *util.Vector) *Mario {
 		figures:  figs,
 		lvl:      *level,
 		drawCb:   func(pos, size *util.Vector, color uint32) {},
-		drawSize: 10,
+		drawSize: 5,
 	}
 }
 
@@ -147,7 +147,7 @@ func (m *Mario) DrawTick() {
 	}
 
 	for c := range m.figures {
-		m.drawCb(&m.figures[c].fig.pos, size, blue)
+		m.drawCb(m.figures[c].fig.pos.Add(size.Scale(0.5).Neg()), size, blue)
 	}
 }
 
