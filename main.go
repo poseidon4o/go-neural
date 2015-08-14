@@ -30,6 +30,7 @@ func main() {
 	fmt.Println("")
 
 	doDraw := true
+	doDev := false
 
 	W := 1500
 	H := 800
@@ -55,9 +56,14 @@ func main() {
 	clearRect := sdl.Rect{0, 0, int32(W), int32(H)}
 	surface.FillRect(&clearRect, 0xffffffff)
 
-	g := flappy.NewFlappy(10000, util.NewVector(float64(LVL_W), float64(H)))
+	figCount := 10000
+	if doDev {
+		figCount = 1
+	}
+
+	g := flappy.NewFlappy(figCount, util.NewVector(float64(LVL_W), float64(H)))
 	g.Completed()
-	game := mario.NewMario(10000, util.NewVector(float64(LVL_W), float64(H)))
+	game := mario.NewMario(figCount, util.NewVector(float64(LVL_W), float64(H)))
 
 	offset := 0
 	visible := func(pos, size *util.Vector) bool {
@@ -115,13 +121,25 @@ func main() {
 			case *sdl.KeyDownEvent:
 				switch t.Keysym.Sym {
 				case sdl.K_LEFT:
-					offset = int(math.Max(0, float64(offset-step)))
+					if doDev {
+						game.Figs()[0].Move(-1)
+					} else {
+						offset = int(math.Max(0, float64(offset-step)))
+					}
 				case sdl.K_RIGHT:
-					offset = int(math.Min(float64(LVL_W-W), float64(offset+step)))
+					if doDev {
+						game.Figs()[0].Move(1)
+					} else {
+						offset = int(math.Min(float64(LVL_W-W), float64(offset+step)))
+					}
 				case sdl.K_SPACE:
-					doDraw = !doDraw
-					surface.FillRect(&clearRect, 0xffaaaaaa)
-					window.UpdateSurface()
+					if doDev {
+						game.Figs()[0].Jump()
+					} else {
+						doDraw = !doDraw
+						surface.FillRect(&clearRect, 0xffaaaaaa)
+						window.UpdateSurface()
+					}
 				case sdl.K_ESCAPE:
 					stop = true
 				case sdl.K_END:
