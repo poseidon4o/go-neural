@@ -9,7 +9,7 @@ Simple neural net and genetic algorithm solving some problems like flappy bird.
 
 ## Usage
 
-Install sdl2 from your favourite package manager and
+Install sdl2 from your favourite package manager and or folow [GO-SDL2](https://github.com/veandco/go-sdl2) instalation instructions
 
 ```
 go get github.com/veandco/go-sdl2/sdl
