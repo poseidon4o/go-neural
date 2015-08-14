@@ -194,13 +194,24 @@ func (m *Mario) checkStep() {
 		block := m.lvl.FloorAt(&fig.pos)
 
 		if block == nil || fig.nextPos.Y < block.Y {
-			fig.pos = fig.nextPos
+			fig.pos.Y = fig.nextPos.Y
 		} else {
+			// m.drawCb(block, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
 			// land on block
 			fig.vel.Y = 0
-			fig.pos.Y = block.Y - 1
-			fig.pos.X = fig.nextPos.X
+			fig.pos.Y = block.Y - 0.1
 			fig.Land()
+		}
+
+		if fig.pos.X != fig.nextPos.X {
+			fig.nextPos.Y = fig.pos.Y
+			colide := m.lvl.CubeAt(&fig.nextPos)
+			if colide != nil {
+				// m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
+				fig.pos.X = colide.X - 1
+			} else {
+				fig.pos.X = fig.nextPos.X
+			}
 		}
 	}
 }

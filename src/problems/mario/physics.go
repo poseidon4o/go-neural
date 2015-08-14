@@ -108,18 +108,33 @@ func NewLevel(w, h int) *Level {
 	return lvl
 }
 
+func (l *Level) toLevelCoords(pos *util.Vector) (int, int) {
+	return int(pos.X / float64(BLOCK_SIZE)), int(pos.Y / float64(BLOCK_SIZE))
+}
+
+func (l *Level) validCoord(w, h int) bool {
+	return w >= 0 && w < (int(l.size.X)/BLOCK_SIZE) && h >= 0 && h < (int(l.size.Y)/BLOCK_SIZE)
+}
+
+func (l *Level) IsSolid(pos *util.Vector) bool {
+	return l.CubeAt(pos) != nil
+}
+
+func (l *Level) CubeAt(pos *util.Vector) *util.Vector {
+	w, h := l.toLevelCoords(pos)
+	if l.validCoord(w, h) {
+		return l.blocks[w][h]
+	} else {
+		return nil
+	}
+}
+
 func (l *Level) FloorAt(pos *util.Vector) *util.Vector {
-	wIdx := int(pos.X / float64(BLOCK_SIZE))
-	hIdx := int(pos.Y / float64(BLOCK_SIZE))
+	wIdx, hIdx := l.toLevelCoords(pos)
 
-	if wIdx < 0 || wIdx >= len(l.blocks) || hIdx < 0 || hIdx >= len(l.blocks[0]) {
+	if !l.validCoord(wIdx, hIdx+1) {
 		return nil
 	}
-
-	if hIdx+1 >= len(l.blocks[0]) {
-		return nil
-	}
-
 	return l.blocks[wIdx][hIdx+1]
 }
 
@@ -134,6 +149,7 @@ func (l *Level) AddFigures(count int) {
 			pos:     *l.NewFigurePos(),
 			vel:     *util.NewVector(0, 0),
 			nextPos: *util.NewVector(0, 0),
+			jumps:   1,
 		})
 	}
 }
