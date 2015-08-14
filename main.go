@@ -102,8 +102,6 @@ func main() {
 	for {
 		start = time.Now()
 
-		game.LogicTick(1 / FPS)
-
 		if doDraw {
 			window.UpdateSurface()
 			surface.FillRect(&clearRect, 0xffffffff)
@@ -112,6 +110,8 @@ func main() {
 			// update only 10% of the frames
 			window.UpdateSurface()
 		}
+
+		game.LogicTick(1 / FPS)
 
 		stop := false
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
