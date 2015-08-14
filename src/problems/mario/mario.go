@@ -85,7 +85,9 @@ func (m *Mario) LogicTick(dt float64) {
 	m.lvl.Step(dt)
 	m.checkStep()
 	m.mutateStep()
-	m.thnikStep()
+	if len(m.figures) > 1 {
+		m.thnikStep()
+	}
 }
 
 func (m *MarioNode) Jump() {
