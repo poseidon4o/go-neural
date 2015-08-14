@@ -17,7 +17,7 @@ const BLOCK_SIZE int = 25
 
 var JUMP_FORCE util.Vector = util.Vector{
 	X: 0,
-	Y: -1000,
+	Y: -700,
 }
 
 var X_ACCELERATION util.Vector = util.Vector{
