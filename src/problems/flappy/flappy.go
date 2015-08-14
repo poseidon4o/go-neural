@@ -53,7 +53,15 @@ type Flappy struct {
 	drawSize int
 }
 
-func (f *Flappy) Completed() float64 {
+func (f *Flappy) Jump() {
+	f.birds[0].bird.Jump()
+}
+
+func (f *Flappy) Move(dir int) {
+	f.birds[0].bird.Move(dir)
+}
+
+func (f *Flappy) Complete() float64 {
 	return f.birds[0].bestX / f.lvl.size.X
 }
 
@@ -84,7 +92,7 @@ func (f *Flappy) DrawTick() {
 	size.Y = float64(f.drawSize)
 
 	for c := range f.birds {
-		f.drawCb(&f.birds[c].bird.Pos, &size, red)
+		f.drawCb(&f.birds[c].bird.pos, &size, red)
 	}
 
 	hSize := float64(PylonHole) / 2.0
@@ -170,19 +178,19 @@ func (f *Flappy) checkFlock() {
 	hSize := float64(PylonHole / 2)
 
 	for c := range f.birds {
-		if f.birds[c].bird.Pos.Y >= f.lvl.size.Y || f.birds[c].bird.Pos.Y < 1 {
+		if f.birds[c].bird.pos.Y >= f.lvl.size.Y || f.birds[c].bird.pos.Y < 1 {
 			// hit ceeling or floor
 			f.birds[c].dead = true
 			continue
 		}
 
-		pylon := f.lvl.ClosestPylon(&f.birds[c].bird.Pos)
-		if f.birds[c].bird.Pos.Y >= pylon.Y-hSize && f.birds[c].bird.Pos.Y <= pylon.Y+hSize {
+		pylon := f.lvl.ClosestPylon(&f.birds[c].bird.pos)
+		if f.birds[c].bird.pos.Y >= pylon.Y-hSize && f.birds[c].bird.pos.Y <= pylon.Y+hSize {
 			// in the pylon hole
 			continue
 		}
 
-		f.birds[c].dead = collide(f.birds[c].bird.Pos.X, f.birds[c].bird.NextPos.X, pylon.X)
+		f.birds[c].dead = collide(f.birds[c].bird.pos.X, f.birds[c].bird.nextPos.X, pylon.X)
 	}
 
 }
@@ -191,17 +199,17 @@ func (f *Flappy) thnikFlock() {
 	wg := make(chan struct{}, len(f.birds))
 
 	thinkBird := func(c int) {
-		next := f.lvl.FirstPylonAfter(&f.birds[c].bird.Pos)
-		diffYval := next.Y - f.birds[c].bird.Pos.Y
-		diffXval := next.X - f.birds[c].bird.Pos.X
+		next := f.lvl.FirstPylonAfter(&f.birds[c].bird.pos)
+		diffYval := next.Y - f.birds[c].bird.pos.Y
+		diffXval := next.X - f.birds[c].bird.pos.X
 
 		f.birds[c].brain.Stimulate(nrn(diffY), diffYval)
 		f.birds[c].brain.Stimulate(nrn(diffX), diffXval)
-		f.birds[c].brain.Stimulate(nrn(velY), f.birds[c].bird.Vel.Y)
+		f.birds[c].brain.Stimulate(nrn(velY), f.birds[c].bird.vel.Y)
 
 		f.birds[c].brain.Step()
 		if f.birds[c].brain.ValueOf(nrn(jump)) > 0.75 {
-			f.birds[c].bird.Vel.Y = -500
+			f.birds[c].bird.Jump()
 		}
 
 		f.birds[c].brain.Clear()
@@ -229,8 +237,8 @@ func (f *Flappy) mutateFlock() {
 	for c := range f.birds {
 		if f.birds[c].dead {
 			f.birds[c].dead = false
-			f.birds[c].bird.Pos = *f.lvl.NewBirdPos()
-			f.birds[c].bird.Vel = *util.NewVector(SCROLL_SPEED, 0)
+			f.birds[c].bird.pos = *f.lvl.NewBirdPos()
+			f.birds[c].bird.vel = *util.NewVector(SCROLL_SPEED, 0)
 
 			f.birds[c].brain = neural.Cross(best, randNet())
 
@@ -240,8 +248,8 @@ func (f *Flappy) mutateFlock() {
 				f.birds[c].brain.Mutate(0.33)
 			}
 		} else {
-			f.birds[c].bird.Pos = f.birds[c].bird.NextPos
-			f.birds[c].bestX = math.Max(f.birds[c].bird.Pos.X, f.birds[c].bestX)
+			f.birds[c].bird.pos = f.birds[c].bird.nextPos
+			f.birds[c].bestX = math.Max(f.birds[c].bird.pos.X, f.birds[c].bestX)
 		}
 	}
 

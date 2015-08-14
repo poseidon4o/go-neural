@@ -15,8 +15,10 @@ type DrawableProblem interface {
 	SetDrawRectCb(cb func(pos, size *util.Vector, color uint32))
 	LogicTick(dt float64)
 	DrawTick()
-	Completed() float64
+	Complete() float64
 	Done() bool
+	Jump()
+	Move(int)
 }
 
 func main() {
@@ -26,6 +28,9 @@ func main() {
 	fmt.Println("home:\tmove back to level begining")
 	fmt.Println("left:\tmove screen to the left")
 	fmt.Println("right:\tmove screen to the right")
+	fmt.Println("1:\tswitch to flappy")
+	fmt.Println("2:\tswitch to mario")
+	fmt.Println("enter:\tcycle trough mario/flappy")
 	fmt.Println("esc:\teixt")
 	fmt.Println("")
 
@@ -61,10 +66,6 @@ func main() {
 		figCount = 1
 	}
 
-	g := flappy.NewFlappy(figCount, util.NewVector(float64(LVL_W), float64(H)))
-	g.Completed()
-	game := mario.NewMario(figCount, util.NewVector(float64(LVL_W), float64(H)))
-
 	offset := 0
 	visible := func(pos, size *util.Vector) bool {
 
@@ -88,11 +89,19 @@ func main() {
 		}
 	}
 
-	game.SetDrawRectCb(func(pos, size *util.Vector, color uint32) {
+	drawCb := func(pos, size *util.Vector, color uint32) {
 		if visible(pos, size) {
 			surface.FillRect(toScreen(pos, size), color)
 		}
-	})
+	}
+
+	fl := flappy.NewFlappy(figCount, util.NewVector(float64(LVL_W), float64(H)))
+	mr := mario.NewMario(figCount, util.NewVector(float64(LVL_W), float64(H)))
+
+	fl.SetDrawRectCb(drawCb)
+	mr.SetDrawRectCb(drawCb)
+
+	var game DrawableProblem = fl
 
 	step := 65
 
@@ -122,28 +131,38 @@ func main() {
 				switch t.Keysym.Sym {
 				case sdl.K_LEFT:
 					if doDev {
-						game.Figs()[0].Move(-1)
+						game.Move(-1)
 					} else {
 						offset = int(math.Max(0, float64(offset-step)))
 					}
 				case sdl.K_RIGHT:
 					if doDev {
-						game.Figs()[0].Move(1)
+						game.Move(1)
 					} else {
 						offset = int(math.Min(float64(LVL_W-W), float64(offset+step)))
 					}
 				case sdl.K_SPACE:
 					if doDev {
-						game.Figs()[0].Jump()
+						game.Jump()
 					} else {
 						doDraw = !doDraw
 						surface.FillRect(&clearRect, 0xffaaaaaa)
 						window.UpdateSurface()
 					}
+				case sdl.K_1:
+					game = fl
+				case sdl.K_2:
+					game = mr
+				case sdl.K_RETURN:
+					if game == fl {
+						game = mr
+					} else {
+						game = fl
+					}
 				case sdl.K_ESCAPE:
 					stop = true
 				case sdl.K_END:
-					offset = int(math.Max(math.Min(float64(LVL_W-W), game.Completed()*float64(LVL_W)-float64(W)/2), 0))
+					offset = int(math.Max(math.Min(float64(LVL_W-W), game.Complete()*float64(LVL_W)-float64(W)/2), 0))
 				case sdl.K_HOME:
 					offset = 0
 				}
@@ -168,7 +187,7 @@ func main() {
 
 		if frame > int(FPS) {
 			frame = 0
-			fmt.Printf("ftime last: %f\tftime average %f\tcompletion %f%%\n", frameMs, averageFrameTime/1000000, game.Completed()*100)
+			fmt.Printf("ftime last: %f\tftime average %f\tcompletion %f%%\n", frameMs, averageFrameTime/1000000, game.Complete()*100)
 		}
 
 		// sleep only if drawing and there is time to sleep more than 3ms

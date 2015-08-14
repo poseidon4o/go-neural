@@ -32,13 +32,13 @@ type Figure struct {
 	jumps   int
 }
 
-func (m *Figure) Jump() {
-	if m.jumps >= 1 {
+func (f *Figure) Jump() {
+	if f.jumps >= 1 {
 		return
 	}
-	m.jumps++
-	m.vel = *m.vel.Add(&JUMP_FORCE)
-	m.vel.Y = math.Max(m.vel.Y, JUMP_FORCE.Y)
+	f.jumps++
+	f.vel = *f.vel.Add(&JUMP_FORCE)
+	f.vel.Y = math.Max(f.vel.Y, JUMP_FORCE.Y)
 }
 
 func (f *Figure) Land() {
@@ -65,7 +65,7 @@ func (l *Level) makeHole(c *int) {
 
 func (l *Level) makeObstacle(c *int) {
 	r := int(l.size.Y/float64(BLOCK_SIZE)) - 1
-	for q := 0; q < 3; q++ {
+	for q := 0; q < 5; q++ {
 		l.blocks[*c][r-q] = util.NewVector(float64(*c*BLOCK_SIZE), float64((r-q)*BLOCK_SIZE))
 	}
 }

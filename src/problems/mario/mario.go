@@ -69,7 +69,7 @@ type Mario struct {
 	drawSize int
 }
 
-func (m *Mario) Completed() float64 {
+func (m *Mario) Complete() float64 {
 	return m.figures[0].bestX / m.lvl.size.X
 }
 
@@ -90,12 +90,12 @@ func (m *Mario) LogicTick(dt float64) {
 	}
 }
 
-func (m *MarioNode) Jump() {
-	m.fig.Jump()
+func (m *Mario) Jump() {
+	m.figures[0].fig.Jump()
 }
 
-func (m *MarioNode) Move(dir int) {
-	m.fig.Move(dir)
+func (m *Mario) Move(dir int) {
+	m.figures[0].fig.Move(dir)
 }
 
 func (m *Mario) Figs() MarioCol {

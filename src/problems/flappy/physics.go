@@ -6,26 +6,48 @@ import (
 	"math"
 )
 
-type Bird struct {
-	Pos     util.Vector
-	Vel     util.Vector
-	NextPos util.Vector
-}
-
 const pylonSpacing int = 150
 const PylonHole int = 150
 const G_CONST float64 = 9.8 * 100
+
 const SCROLL_SPEED float64 = 75
+
+var X_ACCELERATION util.Vector = util.Vector{
+	X: SCROLL_SPEED,
+	Y: 0,
+}
 
 var G_FORCE util.Vector = util.Vector{
 	X: 0,
 	Y: G_CONST,
 }
 
+var JUMP_FORCE util.Vector = util.Vector{
+	X: 0,
+	Y: -500,
+}
+
 type Level struct {
 	size   util.Vector
 	pylons []util.Vector
 	birds  []*Bird
+}
+
+type Bird struct {
+	pos     util.Vector
+	vel     util.Vector
+	nextPos util.Vector
+}
+
+func (b *Bird) Jump() {
+	b.vel = *b.vel.Add(&JUMP_FORCE)
+	b.vel.Y = math.Max(b.vel.Y, JUMP_FORCE.Y)
+}
+
+func (b *Bird) Land() {
+}
+
+func (b *Bird) Move(dir int) {
 }
 
 func NewLevel(w, h int) *Level {
@@ -54,9 +76,9 @@ func (l *Level) AddBirds(count int) {
 	for c := 0; c < count; c++ {
 
 		l.birds = append(l.birds, &Bird{
-			Pos:     *l.NewBirdPos(),
-			Vel:     *util.NewVector(SCROLL_SPEED, 0),
-			NextPos: *util.NewVector(0, 0),
+			pos:     *l.NewBirdPos(),
+			vel:     *util.NewVector(0, 0).Add(&X_ACCELERATION),
+			nextPos: *util.NewVector(0, 0),
 		})
 	}
 }
@@ -114,9 +136,9 @@ func (l *Level) Step(dt float64) {
 	for c := range l.birds {
 		// position += timestep * (velocity + timestep * acceleration / 2);
 		// TODO not use go
-		l.birds[c].NextPos = *l.birds[c].Pos.Add(G_FORCE.Scale(dt / 2).Add(&l.birds[c].Vel).Scale(dt))
+		l.birds[c].nextPos = *l.birds[c].pos.Add(G_FORCE.Scale(dt / 2).Add(&l.birds[c].vel).Scale(dt))
 
 		// velocity += timestep * acceleration;
-		l.birds[c].Vel = *l.birds[c].Vel.Add(G_FORCE.Scale(dt))
+		l.birds[c].vel = *l.birds[c].vel.Add(G_FORCE.Scale(dt))
 	}
 }
