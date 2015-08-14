@@ -208,7 +208,13 @@ func (m *Mario) checkStep() {
 			colide := m.lvl.CubeAt(&fig.nextPos)
 			if colide != nil {
 				// m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
-				fig.pos.X = colide.X - 1
+				if fig.pos.X < fig.nextPos.X {
+					// collide right
+					fig.pos.X = colide.X - 0.1
+				} else {
+					// colide left
+					fig.pos.X = colide.X + float64(BLOCK_SIZE) + 0.1
+				}
 			} else {
 				fig.pos.X = fig.nextPos.X
 			}
