@@ -64,7 +64,10 @@ func (l *Level) makeHole(c *int) {
 }
 
 func (l *Level) makeObstacle(c *int) {
-	*c--
+	r := int(l.size.Y/float64(BLOCK_SIZE)) - 1
+	for q := 0; q < 3; q++ {
+		l.blocks[*c][r-q] = util.NewVector(float64(*c*BLOCK_SIZE), float64((r-q)*BLOCK_SIZE))
+	}
 }
 
 func (l *Level) makeGround(c *int) {
