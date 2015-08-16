@@ -5,6 +5,7 @@ import (
 	neural "github.com/poseidon4o/go-neural/src/neural"
 	util "github.com/poseidon4o/go-neural/src/util"
 	"math"
+	"math/rand"
 	"sort"
 )
 
@@ -258,8 +259,17 @@ func (m *Mario) thnikStep() {
 func (m *Mario) mutateStep() {
 	sort.Sort(m.figures)
 
+	cutOff := 6.0
 	randNet := func() *neural.Net {
-		return m.figures[int(neural.RandMax(float64(len(m.figures))))].brain
+		idx := 0
+		for {
+			r := rand.ExpFloat64()
+			if r <= cutOff {
+				idx = int((r * float64(len(m.figures))) / cutOff)
+				break
+			}
+		}
+		return m.figures[idx].brain
 	}
 
 	best := m.figures[0].brain
