@@ -37,8 +37,8 @@ func main() {
 	doDraw := true
 	doDev := false
 
-	W := 1500
-	H := 800
+	W := 1300
+	H := 700
 	LVL_W := W * 50
 
 	var FPS float64 = 60.0
