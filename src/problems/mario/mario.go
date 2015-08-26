@@ -272,8 +272,6 @@ func (m *Mario) mutateStep() {
 		return m.figures[idx].brain
 	}
 
-	best := m.figures[0].brain
-
 	var idleThreshold uint32 = 600
 
 	for c := range m.figures {
@@ -286,12 +284,12 @@ func (m *Mario) mutateStep() {
 				m.figures[c].brain.Mutate(0.75)
 				m.figures[c].bestX *= 0.25
 			} else {
-				m.figures[c].brain = neural.Cross(best, randNet())
-				if neural.Chance(0.01) {
-					// penalize best achievement due to mutation
-					m.figures[c].bestX *= 0.8
-					m.figures[c].brain.Mutate(0.25)
+				swapChance := float64(c) / float64(len(m.figures))
+				if neural.Chance(swapChance) {
+					*m.figures[c].brain = *randNet()
 				}
+				m.figures[c].brain.Mutate(0.05)
+				m.figures[c].bestX *= 0.95
 			}
 
 			m.figures[c].idleFrames = 0
