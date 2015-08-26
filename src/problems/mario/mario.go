@@ -85,10 +85,25 @@ func (m *Mario) SetDrawRectCb(cb func(pos, size *util.Vector, color uint32)) {
 
 func (m *Mario) LogicTick(dt float64) {
 	m.lvl.Step(dt)
-	m.checkStep()
-	m.mutateStep()
-	if len(m.figures) > 1 {
-		m.thnikStep()
+	sort.Sort(m.figures)
+
+	wg := make(chan struct{}, len(m.figures))
+
+	stepC := func(r int) {
+		m.checkStep(r)
+		m.mutateStep(r)
+		if len(m.figures) > 1 {
+			m.thnikStep(r)
+		}
+		wg <- struct{}{}
+	}
+
+	for c := range m.figures {
+		go stepC(c)
+	}
+
+	for c := 0; c < len(m.figures); c++ {
+		<-wg
 	}
 }
 
@@ -178,141 +193,123 @@ func (m *Mario) DrawTick() {
 	}
 }
 
-func (m *Mario) checkStep() {
-	for c := range m.figures {
-		fig := m.figures[c].fig
+func (m *Mario) checkStep(c int) {
+	fig := m.figures[c].fig
 
-		if fig.nextPos.Y > m.lvl.size.Y || fig.nextPos.Y < 0 {
-			m.figures[c].dead = true
-			continue
-		}
+	if fig.nextPos.Y > m.lvl.size.Y || fig.nextPos.Y < 0 {
+		m.figures[c].dead = true
+		return
+	}
 
-		if fig.nextPos.X < 0 {
-			fig.nextPos.X = 0
-		} else if fig.nextPos.X > m.lvl.size.X {
-			fig.nextPos.X = m.lvl.size.X
-		}
+	if fig.nextPos.X < 0 {
+		fig.nextPos.X = 0
+	} else if fig.nextPos.X > m.lvl.size.X {
+		fig.nextPos.X = m.lvl.size.X
+	}
 
-		block := m.lvl.FloorAt(&fig.pos)
+	block := m.lvl.FloorAt(&fig.pos)
 
-		if block == nil || fig.nextPos.Y < block.Y {
-			fig.pos.Y = fig.nextPos.Y
-		} else {
-			// m.drawCb(block, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
-			// land on block
-			fig.vel.Y = 0
-			fig.pos.Y = block.Y - 0.1
-			fig.Land()
-		}
+	if block == nil || fig.nextPos.Y < block.Y {
+		fig.pos.Y = fig.nextPos.Y
+	} else {
+		// m.drawCb(block, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
+		// land on block
+		fig.vel.Y = 0
+		fig.pos.Y = block.Y - 0.1
+		fig.Land()
+	}
 
-		if fig.pos.X != fig.nextPos.X {
-			fig.nextPos.Y = fig.pos.Y
-			colide := m.lvl.CubeAt(&fig.nextPos)
-			if colide != nil {
-				// m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
-				if fig.pos.X < fig.nextPos.X {
-					// collide right
-					fig.pos.X = colide.X - 0.1
-				} else {
-					// colide left
-					fig.pos.X = colide.X + float64(BLOCK_SIZE) + 0.1
-				}
+	if fig.pos.X != fig.nextPos.X {
+		fig.nextPos.Y = fig.pos.Y
+		colide := m.lvl.CubeAt(&fig.nextPos)
+		if colide != nil {
+			// m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
+			if fig.pos.X < fig.nextPos.X {
+				// collide right
+				fig.pos.X = colide.X - 0.1
 			} else {
-				fig.pos.X = fig.nextPos.X
+				// colide left
+				fig.pos.X = colide.X + float64(BLOCK_SIZE) + 0.1
 			}
+		} else {
+			fig.pos.X = fig.nextPos.X
 		}
 	}
+
 }
 
-func (m *Mario) thnikStep() {
-	wg := make(chan struct{}, len(m.figures))
+func (m *Mario) thnikStep(c int) {
+	discreteX := float64(int(m.figures[c].fig.pos.X / float64(OBSTACLE_SPACING*BLOCK_SIZE)))
+	m.figures[c].brain.Stimulate(nrn(posX), discreteX)
 
-	thinkBird := func(c int) {
-		discreteX := float64(int(m.figures[c].fig.pos.X / float64(OBSTACLE_SPACING*BLOCK_SIZE)))
-		m.figures[c].brain.Stimulate(nrn(posX), discreteX)
+	m.figures[c].brain.Stimulate(nrn(posY), m.figures[c].fig.pos.Y)
+	m.figures[c].brain.Stimulate(nrn(velX), m.figures[c].fig.vel.X)
+	m.figures[c].brain.Stimulate(nrn(velY), m.figures[c].fig.vel.Y)
 
-		m.figures[c].brain.Stimulate(nrn(posY), m.figures[c].fig.pos.Y)
-		m.figures[c].brain.Stimulate(nrn(velX), m.figures[c].fig.vel.X)
-		m.figures[c].brain.Stimulate(nrn(velY), m.figures[c].fig.vel.Y)
+	m.figures[c].brain.Step()
 
-		m.figures[c].brain.Step()
-
-		if m.figures[c].brain.ValueOf(nrn(jump)) > 0.9 {
-			m.figures[c].fig.Jump()
-		}
-
-		xMoveValue := m.figures[c].brain.ValueOf(nrn(xMove))
-		if math.Abs(xMoveValue) > 0.9 {
-			m.figures[c].fig.Move(int(xMoveValue * 10))
-		}
-
-		m.figures[c].brain.Clear()
-		wg <- struct{}{}
+	if m.figures[c].brain.ValueOf(nrn(jump)) > 0.9 {
+		m.figures[c].fig.Jump()
 	}
 
-	for c := 0; c < len(m.figures); c++ {
-		go thinkBird(c)
+	xMoveValue := m.figures[c].brain.ValueOf(nrn(xMove))
+	if math.Abs(xMoveValue) > 0.9 {
+		m.figures[c].fig.Move(int(xMoveValue * 10))
 	}
 
-	for c := 0; c < len(m.figures); c++ {
-		<-wg
-	}
+	m.figures[c].brain.Clear()
 }
 
-func (m *Mario) mutateStep() {
-	sort.Sort(m.figures)
+const idleThreshold uint32 = 600
 
+func (m *Mario) randNet() *neural.Net {
 	cutOff := 10.0
-	randNet := func() *neural.Net {
-		idx := 0
-		for {
-			r := rand.ExpFloat64()
-			if r <= cutOff {
-				idx = int((r * float64(len(m.figures))) / cutOff)
-				break
-			}
+	idx := 0
+	for {
+		r := rand.ExpFloat64()
+		if r <= cutOff {
+			idx = int((r * float64(len(m.figures))) / cutOff)
+			break
 		}
-		return m.figures[idx].brain
 	}
+	return m.figures[idx].brain
+}
 
-	var idleThreshold uint32 = 600
+func (m *Mario) mutateStep(c int) {
 
-	for c := range m.figures {
-		if m.figures[c].dead {
-			m.figures[c].dead = false
-			m.figures[c].fig.pos = *m.lvl.NewFigurePos()
-			m.figures[c].fig.vel = *util.NewVector(0, 0)
+	if m.figures[c].dead {
+		m.figures[c].dead = false
+		m.figures[c].fig.pos = *m.lvl.NewFigurePos()
+		m.figures[c].fig.vel = *util.NewVector(0, 0)
 
-			if m.figures[c].idleFrames >= idleThreshold {
-				m.figures[c].brain.Mutate(0.75)
-				m.figures[c].bestX *= 0.25
-			} else {
-				swapChance := (float64(c) / float64(len(m.figures))) * 2.0
-				if neural.Chance(swapChance) {
-					*m.figures[c].brain = *randNet()
-				}
-				m.figures[c].brain.MutateWithMagnitude(0.01, 0.1)
-				m.figures[c].bestX *= 0.975
-			}
-
-			m.figures[c].idleFrames = 0
-			m.figures[c].idleX = 0
+		if m.figures[c].idleFrames >= idleThreshold {
+			m.figures[c].brain.Mutate(0.75)
+			m.figures[c].bestX *= 0.25
 		} else {
-			if m.figures[c].fig.pos.X > m.figures[c].bestX {
-				m.figures[c].bestX = m.figures[c].fig.pos.X
+			swapChance := (float64(c) / float64(len(m.figures))) * 2.0
+			if neural.Chance(swapChance) {
+				*m.figures[c].brain = *m.randNet()
 			}
-
-			if m.figures[c].fig.pos.X > m.figures[c].idleX {
-				m.figures[c].idleX = m.figures[c].fig.pos.X
-			} else {
-				m.figures[c].idleFrames++
-				if m.figures[c].idleFrames >= idleThreshold {
-					m.figures[c].dead = true
-					c--
-				}
-			}
-
+			m.figures[c].brain.MutateWithMagnitude(0.01, 0.1)
+			m.figures[c].bestX *= 0.975
 		}
-	}
 
+		m.figures[c].idleFrames = 0
+		m.figures[c].idleX = 0
+	} else {
+		if m.figures[c].fig.pos.X > m.figures[c].bestX {
+			m.figures[c].bestX = m.figures[c].fig.pos.X
+		}
+
+		if m.figures[c].fig.pos.X > m.figures[c].idleX {
+			m.figures[c].idleX = m.figures[c].fig.pos.X
+		} else {
+			m.figures[c].idleFrames++
+			if m.figures[c].idleFrames >= idleThreshold {
+				m.figures[c].dead = true
+				// c--
+			}
+		}
+
+	}
 }
