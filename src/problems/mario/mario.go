@@ -228,7 +228,9 @@ func (m *Mario) thnikStep() {
 	wg := make(chan struct{}, len(m.figures))
 
 	thinkBird := func(c int) {
-		m.figures[c].brain.Stimulate(nrn(posX), m.figures[c].fig.pos.X)
+		discreteX := float64(int(m.figures[c].fig.pos.X / float64(OBSTACLE_SPACING*BLOCK_SIZE)))
+		m.figures[c].brain.Stimulate(nrn(posX), discreteX)
+
 		m.figures[c].brain.Stimulate(nrn(posY), m.figures[c].fig.pos.Y)
 		m.figures[c].brain.Stimulate(nrn(velX), m.figures[c].fig.vel.X)
 		m.figures[c].brain.Stimulate(nrn(velY), m.figures[c].fig.vel.Y)

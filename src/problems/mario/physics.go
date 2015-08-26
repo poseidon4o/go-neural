@@ -25,6 +25,8 @@ var X_ACCELERATION util.Vector = util.Vector{
 	Y: 0,
 }
 
+const OBSTACLE_SPACING int = 10
+
 type Figure struct {
 	pos     util.Vector
 	vel     util.Vector
@@ -96,7 +98,7 @@ func NewLevel(w, h int) *Level {
 	for c, obs := 0, 1; c < blockW; c, obs = c+1, obs+1 {
 
 		pr := c
-		if obs%10 == 0 {
+		if obs%OBSTACLE_SPACING == 0 {
 			if neural.Chance(0.5) {
 				lvl.makeHole(&c)
 			} else {
