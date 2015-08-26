@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	neural "github.com/poseidon4o/go-neural/src/neural"
 	flappy "github.com/poseidon4o/go-neural/src/problems/flappy"
 	mario "github.com/poseidon4o/go-neural/src/problems/mario"
 	util "github.com/poseidon4o/go-neural/src/util"
@@ -187,6 +188,9 @@ func main() {
 
 		if frame > int(FPS) {
 			frame = 0
+			fmt.Printf("CHRand %d\tGRand %d\tG/C %f\n", neural.ChanRand, neural.GlobRand, float64(neural.GlobRand)/float64(neural.ChanRand))
+			neural.ChanRand = 0
+			neural.GlobRand = 0
 			fmt.Printf("ftime last: %f\tftime average %f\tcompletion %f%%\n", frameMs, averageFrameTime/1000000, game.Complete()*100)
 		}
 

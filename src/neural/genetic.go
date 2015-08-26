@@ -5,26 +5,78 @@ import (
 	"time"
 )
 
-var gen = rand.New(rand.NewSource(time.Now().UnixNano()))
+var gen [10]*rand.Rand
 
-var values []float64 = nil
-var idx int
+var genData = [10]chan float64{
+	make(chan float64, 1000),
+	make(chan float64, 1000),
+	make(chan float64, 1000),
+	make(chan float64, 1000),
+	make(chan float64, 1000),
+	make(chan float64, 1000),
+	make(chan float64, 1000),
+	make(chan float64, 1000),
+	make(chan float64, 1000),
+	make(chan float64, 1000),
+}
 
-func Seed(vals []float64) {
-	values = vals
-	idx = 0
+var ChanRand int = 0
+var GlobRand int = 0
+
+func init() {
+	for c := 0; c < 10; c++ {
+		gen[c] = rand.New(rand.NewSource(time.Now().UnixNano()))
+		go func(r int) {
+			for {
+				genData[r] <- gen[r].Float64()
+			}
+		}(c)
+	}
 }
 
 func Rand() float64 {
-	if values == nil {
-		return gen.Float64()
+	chRead := false
+	var f float64
+	select {
+	case f = <-genData[0]:
+		chRead = true
+		break
+	case f = <-genData[1]:
+		chRead = true
+		break
+	case f = <-genData[2]:
+		chRead = true
+		break
+	case f = <-genData[3]:
+		chRead = true
+		break
+	case f = <-genData[4]:
+		chRead = true
+		break
+	case f = <-genData[5]:
+		chRead = true
+		break
+	case f = <-genData[6]:
+		chRead = true
+		break
+	case f = <-genData[7]:
+		chRead = true
+		break
+	case f = <-genData[8]:
+		chRead = true
+		break
+	case f = <-genData[9]:
+		chRead = true
+		break
+	default:
+		f = rand.Float64()
 	}
-	if idx == len(values) {
-		idx = 0
+	if chRead {
+		ChanRand++
+	} else {
+		GlobRand++
 	}
-	next := values[idx]
-	idx++
-	return next
+	return f
 }
 
 func RandMax(max float64) float64 {
