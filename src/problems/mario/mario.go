@@ -45,6 +45,7 @@ type MarioNode struct {
 	fig        *Figure
 	brain      *neural.Net
 	bestX      float64
+	idleX      float64
 	dead       bool
 	idleFrames uint32
 }
@@ -279,6 +280,7 @@ func (m *Mario) mutateStep() {
 			m.figures[c].dead = false
 			m.figures[c].fig.pos = *m.lvl.NewFigurePos()
 			m.figures[c].fig.vel = *util.NewVector(0, 0)
+			m.figures[c].idleX = 0
 
 			if m.figures[c].idleFrames >= idleThreshold {
 				m.figures[c].brain.Mutate(0.75)
@@ -297,9 +299,13 @@ func (m *Mario) mutateStep() {
 		} else {
 			if m.figures[c].fig.pos.X > m.figures[c].bestX {
 				m.figures[c].bestX = m.figures[c].fig.pos.X
+			}
+
+			if m.figures[c].fig.pos.X > m.figures[c].idleX {
+				m.figures[c].idleX = m.figures[c].fig.pos.X
 			} else {
 				m.figures[c].idleFrames++
-				if m.figures[c].idleFrames >= 600 {
+				if m.figures[c].idleFrames >= idleThreshold {
 					m.figures[c].dead = true
 					c--
 				}
