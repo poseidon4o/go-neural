@@ -45,18 +45,22 @@ func (n *Net) Randomize() {
 	}
 }
 
-func (n *Net) Mutate(rate float64) {
+func (n *Net) MutateWithMagnitude(rate, magnitude float64) {
 	for c := 0; c < n.size; c++ {
 		for r := 0; r < n.size; r++ {
 			if n.HasSynapse(c, r) && Chance(rate) {
 				if Chance(0.5) {
-					n.synapses[c][r] += Rand() - 0.5
+					n.synapses[c][r] += (Rand() - 0.5) * magnitude
 				} else {
 					n.synapses[c][r] = RandMax(2) - 1.0
 				}
 			}
 		}
 	}
+}
+
+func (n *Net) Mutate(rate float64) {
+	n.MutateWithMagnitude(rate, 1)
 }
 
 func Cross(mother, father *Net) *Net {

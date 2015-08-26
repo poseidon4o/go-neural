@@ -262,7 +262,7 @@ func (m *Mario) thnikStep() {
 func (m *Mario) mutateStep() {
 	sort.Sort(m.figures)
 
-	cutOff := 6.0
+	cutOff := 10.0
 	randNet := func() *neural.Net {
 		idx := 0
 		for {
@@ -282,22 +282,21 @@ func (m *Mario) mutateStep() {
 			m.figures[c].dead = false
 			m.figures[c].fig.pos = *m.lvl.NewFigurePos()
 			m.figures[c].fig.vel = *util.NewVector(0, 0)
-			m.figures[c].idleX = 0
 
 			if m.figures[c].idleFrames >= idleThreshold {
 				m.figures[c].brain.Mutate(0.75)
 				m.figures[c].bestX *= 0.25
 			} else {
-				swapChance := float64(c) / float64(len(m.figures))
+				swapChance := (float64(c) / float64(len(m.figures))) * 2.0
 				if neural.Chance(swapChance) {
 					*m.figures[c].brain = *randNet()
 				}
-				m.figures[c].brain.Mutate(0.05)
-				m.figures[c].bestX *= 0.95
+				m.figures[c].brain.MutateWithMagnitude(0.01, 0.1)
+				m.figures[c].bestX *= 0.975
 			}
 
 			m.figures[c].idleFrames = 0
-
+			m.figures[c].idleX = 0
 		} else {
 			if m.figures[c].fig.pos.X > m.figures[c].bestX {
 				m.figures[c].bestX = m.figures[c].fig.pos.X
