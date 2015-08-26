@@ -5,26 +5,29 @@ import (
 	"time"
 )
 
-var gen [10]*rand.Rand
+const RAND_NUMBERS_SIZE int = 200000
+const RAND_BUFFER_COUNT int = 10
+const RAND_BUFFER_SIZE int = RAND_NUMBERS_SIZE / RAND_BUFFER_COUNT
 
-var genData = [10]chan float64{
-	make(chan float64, 1000),
-	make(chan float64, 1000),
-	make(chan float64, 1000),
-	make(chan float64, 1000),
-	make(chan float64, 1000),
-	make(chan float64, 1000),
-	make(chan float64, 1000),
-	make(chan float64, 1000),
-	make(chan float64, 1000),
-	make(chan float64, 1000),
+var gen [RAND_BUFFER_COUNT]*rand.Rand
+var genData = [RAND_BUFFER_COUNT]chan float64{
+	make(chan float64, RAND_BUFFER_SIZE),
+	make(chan float64, RAND_BUFFER_SIZE),
+	make(chan float64, RAND_BUFFER_SIZE),
+	make(chan float64, RAND_BUFFER_SIZE),
+	make(chan float64, RAND_BUFFER_SIZE),
+	make(chan float64, RAND_BUFFER_SIZE),
+	make(chan float64, RAND_BUFFER_SIZE),
+	make(chan float64, RAND_BUFFER_SIZE),
+	make(chan float64, RAND_BUFFER_SIZE),
+	make(chan float64, RAND_BUFFER_SIZE),
 }
 
 var ChanRand int = 0
 var GlobRand int = 0
 
 func init() {
-	for c := 0; c < 10; c++ {
+	for c := 0; c < RAND_BUFFER_COUNT; c++ {
 		gen[c] = rand.New(rand.NewSource(time.Now().UnixNano()))
 		go func(r int) {
 			for {

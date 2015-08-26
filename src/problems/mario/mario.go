@@ -260,7 +260,7 @@ func (m *Mario) thnikStep(c int) {
 	m.figures[c].brain.Clear()
 }
 
-const idleThreshold uint32 = 600
+const idleThreshold uint32 = 2000
 
 func (m *Mario) randNet() *neural.Net {
 	cutOff := 10.0
