@@ -62,7 +62,20 @@ type Level struct {
 }
 
 func (l *Level) makeHole(c *int) {
-	*c += int(3 + neural.RandMax(2))
+	size := int(3 + neural.RandMax(2))
+
+	height := int(l.size.Y/float64(BLOCK_SIZE)) - 1 - 3
+
+	if neural.Chance(0.3) {
+		for iter := -1; iter < size+2; iter++ {
+			x := float64((iter + *c) * BLOCK_SIZE)
+			y := float64(height * BLOCK_SIZE)
+
+			l.blocks[iter+*c][height] = util.NewVector(x, y)
+		}
+	}
+
+	*c += size
 }
 
 func (l *Level) makeObstacle(c *int) {
