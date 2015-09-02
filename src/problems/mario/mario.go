@@ -288,7 +288,7 @@ func (m *Mario) mutateStep(c int) {
 		} else {
 			swapChance := (float64(c) / float64(len(m.figures))) * 2.0
 			if neural.Chance(swapChance) {
-				*m.figures[c].brain = *m.randNet()
+				*m.figures[c].brain = *neural.Cross2(m.randNet(), m.randNet())
 			}
 			m.figures[c].brain.MutateWithMagnitude(0.01, 0.1)
 			m.figures[c].bestX *= 0.975

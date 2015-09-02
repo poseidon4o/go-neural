@@ -1,6 +1,7 @@
 package neural
 
 import (
+	"math"
 	"math/rand"
 	"time"
 )
@@ -100,6 +101,16 @@ func (n *Net) Randomize() {
 	}
 }
 
+func Signof(val float64) float64 {
+	//return float64(int(val > 0) - int(val < 0))
+	if val > 0 {
+		return 1.
+	} else if val < 0 {
+		return -1.
+	}
+	return 0.
+}
+
 func (n *Net) MutateWithMagnitude(rate, magnitude float64) {
 	for c := 0; c < n.size; c++ {
 		for r := 0; r < n.size; r++ {
@@ -138,6 +149,37 @@ func Cross(mother, father *Net) *Net {
 			if father.HasSynapse(c, r) {
 				*child.Synapse(c, r) = *parents[idx].Synapse(c, r)
 				idx = (idx + 1) % 2
+			}
+		}
+	}
+
+	return child
+}
+
+// Differs from Cross as this version does not generate random child
+// in the case when mother and father are very different. When encountering
+// big differences it will prefer the mother's genes
+func Cross2(mother, father *Net) *Net {
+	if father.Size() != father.Size() {
+		panic("Cannot cross Nets with different sizes")
+	}
+
+	child := NewNet(mother.Size())
+
+	for c := 0; c < child.Size(); c++ {
+		for r := 0; r < child.Size(); r++ {
+			if father.HasSynapse(c, r) != mother.HasSynapse(c, r) {
+				continue
+			}
+			if father.HasSynapse(c, r) {
+				fVal := *father.Synapse(c, r)
+				mVal := *mother.Synapse(c, r)
+
+				if Signof(fVal) != Signof(mVal) || math.Abs(math.Abs(fVal)-math.Abs(mVal)) > 0.3 {
+					*child.Synapse(c, r) = mVal
+				} else {
+					*child.Synapse(c, r) = (fVal + mVal) / 2.
+				}
 			}
 		}
 	}
