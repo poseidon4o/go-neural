@@ -246,12 +246,12 @@ func (m *Mario) thnikStep(c int) {
 
 	m.figures[c].brain.Step()
 
-	if m.figures[c].brain.ValueOf(nrn(jump)) > 0.9 {
+	if m.figures[c].brain.ValueOf(nrn(jump)) > 0.95 {
 		m.figures[c].fig.Jump()
 	}
 
 	xMoveValue := m.figures[c].brain.ValueOf(nrn(xMove))
-	if math.Abs(xMoveValue) > 0.9 {
+	if math.Abs(xMoveValue) > 0.95 {
 		m.figures[c].fig.Move(int(xMoveValue * 10))
 	}
 
