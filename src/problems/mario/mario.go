@@ -92,9 +92,7 @@ func (m *Mario) LogicTick(dt float64) {
 	stepC := func(r int) {
 		m.checkStep(r)
 		m.mutateStep(r)
-		if len(m.figures) > 1 {
-			m.thnikStep(r)
-		}
+		m.thnikStep(r)
 		wg <- struct{}{}
 	}
 
