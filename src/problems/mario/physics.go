@@ -62,7 +62,7 @@ type Level struct {
 }
 
 func (l *Level) makeHole(c *int) {
-	*c += 3 // int(3 + neural.RandMax(2))
+	*c += int(3 + neural.RandMax(2))
 }
 
 func (l *Level) makeObstacle(c *int) {
