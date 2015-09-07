@@ -1,6 +1,7 @@
 package mario
 
 import (
+	"fmt"
 	neural "github.com/poseidon4o/go-neural/src/neural"
 	util "github.com/poseidon4o/go-neural/src/util"
 	"math"
@@ -58,6 +59,7 @@ func (f *Figure) Move(dir int) {
 type Level struct {
 	size    util.Vector
 	blocks  [][]*util.Vector
+	bmap    [][]uint32
 	figures []*Figure
 }
 
@@ -103,9 +105,10 @@ func NewLevel(w, h int) *Level {
 	lvl := &Level{
 		size:    *util.NewVector(float64(w), float64(h)),
 		blocks:  make([][]*util.Vector, blockW, blockW),
+		bmap:    make([][]uint32, blockW, blockW),
 		figures: make([]*Figure, 0),
 	}
-
+	fmt.Println("Mario: generating level...")
 	for c := 0; c < blockW; c++ {
 		lvl.blocks[c] = make([]*util.Vector, blockH, blockH)
 		for r := 0; r < blockH; r++ {
@@ -128,6 +131,14 @@ func NewLevel(w, h int) *Level {
 		obs += c - pr
 	}
 
+	fmt.Println("Mario: generating bool map...")
+	for c := 0; c < blockW; c++ {
+		lvl.bmap[c] = make([]uint32, blockH, blockH)
+		for r := 0; r < blockH; r++ {
+			lvl.bmap[c][r] = lvl.boolMapAtIdx(c, r)
+		}
+	}
+
 	return lvl
 }
 
@@ -143,10 +154,8 @@ func (l *Level) IsSolid(pos *util.Vector) bool {
 	return l.CubeAt(pos) != nil
 }
 
-func (l *Level) BoolMapAt(pos *util.Vector) uint32 {
+func (l *Level) boolMapAtIdx(cx, cy int) uint32 {
 	var res uint32 = 0
-	cx, cy := l.ToLevelCoords(pos)
-
 	cx -= 2
 	cy -= 2
 
@@ -161,6 +170,15 @@ func (l *Level) BoolMapAt(pos *util.Vector) uint32 {
 	}
 
 	return res
+}
+
+func (l *Level) BoolMapAt(pos *util.Vector) uint32 {
+	cx, cy := l.ToLevelCoords(pos)
+	if l.validCoord(cx, cy) {
+		return l.bmap[cx][cy]
+	} else {
+		return 0
+	}
 }
 
 func (l *Level) CubeAt(pos *util.Vector) *util.Vector {

@@ -1,6 +1,7 @@
 package neural
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"time"
@@ -28,6 +29,7 @@ var ChanRand int = 0
 var GlobRand int = 0
 
 func init() {
+	fmt.Println("Genetic: pre-generating random values...")
 	for c := 0; c < RAND_BUFFER_COUNT; c++ {
 		gen[c] = rand.New(rand.NewSource(time.Now().UnixNano()))
 		go func(r int) {
