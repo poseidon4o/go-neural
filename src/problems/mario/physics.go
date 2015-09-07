@@ -143,6 +143,26 @@ func (l *Level) IsSolid(pos *util.Vector) bool {
 	return l.CubeAt(pos) != nil
 }
 
+func (l *Level) BoolMapAt(pos *util.Vector) uint16 {
+	var res uint16 = 0
+	cx, cy := l.ToLevelCoords(pos)
+
+	cx--
+	cy--
+
+	var off uint = 0
+	for c := 0; c < 3; c++ {
+		for r := 0; r < 3; r++ {
+			if l.validCoord(cx+c, cy+r) && l.blocks[cx+c][cy+r] != nil {
+				res |= (1 << off)
+			}
+			off++
+		}
+	}
+
+	return res
+}
+
 func (l *Level) CubeAt(pos *util.Vector) *util.Vector {
 	w, h := l.ToLevelCoords(pos)
 	if l.validCoord(w, h) {

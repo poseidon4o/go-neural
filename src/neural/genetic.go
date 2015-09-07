@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const RAND_NUMBERS_SIZE int = 200000
+const RAND_NUMBERS_SIZE int = 300000
 const RAND_BUFFER_COUNT int = 10
 const RAND_BUFFER_SIZE int = RAND_NUMBERS_SIZE / RAND_BUFFER_COUNT
 

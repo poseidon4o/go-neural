@@ -12,26 +12,23 @@ import (
 type NeuronName int
 
 const (
-	posX      NeuronName = iota
-	posY      NeuronName = iota
-	velY      NeuronName = iota
-	velX      NeuronName = iota
+	I00       NeuronName = iota
+	I01       NeuronName = iota
+	I02       NeuronName = iota
+	I10       NeuronName = iota
+	I11       NeuronName = iota
+	I12       NeuronName = iota
+	I20       NeuronName = iota
+	I21       NeuronName = iota
+	I22       NeuronName = iota
 	H1        NeuronName = iota
 	H2        NeuronName = iota
 	H3        NeuronName = iota
 	H4        NeuronName = iota
-	H5        NeuronName = iota
-	H6        NeuronName = iota
-	H7        NeuronName = iota
-	H8        NeuronName = iota
 	R1        NeuronName = iota
 	R2        NeuronName = iota
 	R3        NeuronName = iota
 	R4        NeuronName = iota
-	R5        NeuronName = iota
-	R6        NeuronName = iota
-	R7        NeuronName = iota
-	R8        NeuronName = iota
 	jump      NeuronName = iota
 	xMove     NeuronName = iota
 	NRN_COUNT int        = iota
@@ -126,20 +123,19 @@ func NewMario(figCount int, size *util.Vector) *Mario {
 	for c := range nets {
 		nets[c] = neural.NewNet(NRN_COUNT)
 
-		for r := 0; r < (nrn(H8) - nrn(H1)); r++ {
+		for r := 0; r < (nrn(H4) - nrn(H1)); r++ {
 			// input to H
-			*nets[c].Synapse(nrn(posX), r+nrn(H1)) = 0.0
-			*nets[c].Synapse(nrn(posY), r+nrn(H1)) = 0.0
-			*nets[c].Synapse(nrn(velX), r+nrn(H1)) = 0.0
-			*nets[c].Synapse(nrn(velY), r+nrn(H1)) = 0.0
+			for inp := nrn(I00); inp <= nrn(I22); inp++ {
+				*nets[c].Synapse(inp+nrn(I00), r+nrn(H1)) = 0.0
+			}
 
 			// R to output
 			*nets[c].Synapse(r+nrn(R1), nrn(jump)) = 0.0
 			*nets[c].Synapse(r+nrn(R1), nrn(xMove)) = 0.0
 		}
 
-		for r := 0; r < (nrn(H8) - nrn(H1)); r++ {
-			for q := 0; q < (nrn(H8) - nrn(H1)); q++ {
+		for r := 0; r < (nrn(H4) - nrn(H1)); r++ {
+			for q := 0; q < (nrn(H4) - nrn(H1)); q++ {
 				*nets[c].Synapse(r+nrn(H1), q+nrn(R1)) = 0.0
 			}
 		}
@@ -237,17 +233,39 @@ func (m *Mario) checkStep(c int) {
 	}
 
 	if !uy {
-		fig.pos.Y = fig.nextPos.Y
+		colide := m.lvl.CubeAt(&fig.nextPos)
+		if colide != nil {
+			by := colide.Y + float64(BLOCK_SIZE)
+			if fig.pos.Y >= by && fig.nextPos.Y <= by && fig.pos.X > colide.X+1 && fig.pos.X < colide.X+float64(BLOCK_SIZE)-1 {
+				uy = true
+				fig.pos.Y = by + 0.5
+				fig.vel.Y = 0
+
+				m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
+			}
+		} else {
+			fig.pos.Y = fig.nextPos.Y
+		}
 	}
 }
 
 func (m *Mario) thnikStep(c int) {
-	discreteX := float64(int(m.figures[c].fig.pos.X / float64(OBSTACLE_SPACING*BLOCK_SIZE)))
-	m.figures[c].brain.Stimulate(nrn(posX), discreteX)
+	// discreteX := float64(int(m.figures[c].fig.pos.X / float64(OBSTACLE_SPACING*BLOCK_SIZE)))
+	// m.figures[c].brain.Stimulate(nrn(posX), discreteX)
+	// m.figures[c].brain.Stimulate(nrn(posY), m.figures[c].fig.pos.Y)
+	// m.figures[c].brain.Stimulate(nrn(velX), m.figures[c].fig.vel.X)
+	// m.figures[c].brain.Stimulate(nrn(velY), m.figures[c].fig.vel.Y)
 
-	m.figures[c].brain.Stimulate(nrn(posY), m.figures[c].fig.pos.Y)
-	m.figures[c].brain.Stimulate(nrn(velX), m.figures[c].fig.vel.X)
-	m.figures[c].brain.Stimulate(nrn(velY), m.figures[c].fig.vel.Y)
+	var bmap uint16 = m.lvl.BoolMapAt(&m.figures[c].fig.pos)
+
+	var idx uint = 0
+	for idx = 0; idx < 9; idx++ {
+		if bmap&(1<<idx) == 0 {
+			m.figures[c].brain.Stimulate(int(idx)+nrn(I00), -1)
+		} else {
+			m.figures[c].brain.Stimulate(int(idx)+nrn(I00), 1)
+		}
+	}
 
 	m.figures[c].brain.Step()
 
@@ -263,7 +281,7 @@ func (m *Mario) thnikStep(c int) {
 	m.figures[c].brain.Clear()
 }
 
-const idleThreshold uint32 = 2000
+const idleThreshold uint32 = 100
 
 func (m *Mario) randNet() *neural.Net {
 	cutOff := 10.0
