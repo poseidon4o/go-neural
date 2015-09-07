@@ -69,7 +69,7 @@ func (n *Net) Print() {
 	for c := range n.synapses {
 		for r := range n.synapses[c] {
 			if n.HasSynapse(c, r) {
-				fmt.Printf("%f -> %f = %f\n", n.neurons[c].fire, n.neurons[r].fire, n.synapses[c][r])
+				fmt.Printf("%d -> %d = %f\n", c, r, n.synapses[c][r])
 			}
 		}
 	}
