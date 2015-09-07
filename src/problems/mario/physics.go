@@ -21,7 +21,7 @@ var JUMP_FORCE util.Vector = util.Vector{
 }
 
 var X_ACCELERATION util.Vector = util.Vector{
-	X: 20,
+	X: 200,
 	Y: 0,
 }
 
@@ -185,6 +185,7 @@ func (l *Level) Step(dt float64) {
 
 		// velocity += timestep * acceleration;
 		l.figures[c].vel = *l.figures[c].vel.Add(G_FORCE.Scale(dt))
-		l.figures[c].vel.X *= (1 - 3*dt)
+		// l.figures[c].vel.X *= (1 - 3*dt)
+		l.figures[c].vel.X = 0
 	}
 }

@@ -212,22 +212,9 @@ func (m *Mario) checkStep(c int) {
 		// m.drawCb(block, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
 		// land on block
 		fig.vel.Y = 0
-		fig.pos.Y = block.Y - 0.1
+		fig.pos.Y = block.Y - 0.5
 		fig.Land()
 		uy = true
-	} else {
-		colide := m.lvl.CubeAt(&fig.nextPos)
-		if colide != nil {
-			by := colide.Y + float64(BLOCK_SIZE)
-			if fig.pos.Y >= by && fig.nextPos.Y <= by {
-				uy = true
-				fig.pos.Y = by + 0.1
-				fig.vel.Y = 0
-
-				// m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
-			}
-		}
-
 	}
 
 	if fig.pos.X != fig.nextPos.X {
@@ -239,10 +226,10 @@ func (m *Mario) checkStep(c int) {
 			// m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xffffffff)
 			if fig.pos.X < fig.nextPos.X {
 				// collide right
-				fig.pos.X = colide.X - 0.1
+				fig.pos.X = colide.X - 0.5
 			} else {
 				// colide left
-				fig.pos.X = colide.X + float64(BLOCK_SIZE) + 0.1
+				fig.pos.X = colide.X + float64(BLOCK_SIZE) + 0.5
 			}
 		} else {
 			fig.pos.X = fig.nextPos.X
@@ -319,6 +306,7 @@ func (m *Mario) mutateStep(c int) {
 
 		if m.figures[c].fig.pos.X > m.figures[c].idleX {
 			m.figures[c].idleX = m.figures[c].fig.pos.X
+			m.figures[c].idleFrames = 0
 		} else {
 			m.figures[c].idleFrames++
 			if m.figures[c].idleFrames >= idleThreshold {
