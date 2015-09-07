@@ -67,11 +67,16 @@ func (l *Level) makeHole(c *int) {
 	height := int(l.size.Y/float64(BLOCK_SIZE)) - 1 - 3
 
 	if neural.Chance(0.3) {
-		for iter := -1; iter < size+2; iter++ {
-			x := float64((iter + *c) * BLOCK_SIZE)
+		for iter := -2; iter < size+3; iter++ {
+			xIdx := iter + *c
+			if xIdx < 0 || xIdx >= len(l.blocks) {
+				continue
+			}
+
+			x := float64(xIdx * BLOCK_SIZE)
 			y := float64(height * BLOCK_SIZE)
 
-			l.blocks[iter+*c][height] = util.NewVector(x, y)
+			l.blocks[xIdx][height] = util.NewVector(x, y)
 		}
 	}
 
@@ -126,7 +131,7 @@ func NewLevel(w, h int) *Level {
 	return lvl
 }
 
-func (l *Level) toLevelCoords(pos *util.Vector) (int, int) {
+func (l *Level) ToLevelCoords(pos *util.Vector) (int, int) {
 	return int(pos.X / float64(BLOCK_SIZE)), int(pos.Y / float64(BLOCK_SIZE))
 }
 
@@ -139,7 +144,7 @@ func (l *Level) IsSolid(pos *util.Vector) bool {
 }
 
 func (l *Level) CubeAt(pos *util.Vector) *util.Vector {
-	w, h := l.toLevelCoords(pos)
+	w, h := l.ToLevelCoords(pos)
 	if l.validCoord(w, h) {
 		return l.blocks[w][h]
 	} else {
@@ -148,7 +153,7 @@ func (l *Level) CubeAt(pos *util.Vector) *util.Vector {
 }
 
 func (l *Level) FloorAt(pos *util.Vector) *util.Vector {
-	wIdx, hIdx := l.toLevelCoords(pos)
+	wIdx, hIdx := l.ToLevelCoords(pos)
 
 	if !l.validCoord(wIdx, hIdx+1) {
 		return nil

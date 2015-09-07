@@ -206,22 +206,37 @@ func (m *Mario) checkStep(c int) {
 	}
 
 	block := m.lvl.FloorAt(&fig.pos)
+	uy := false
 
-	if block == nil || fig.nextPos.Y < block.Y {
-		fig.pos.Y = fig.nextPos.Y
-	} else {
+	if block != nil && fig.nextPos.Y >= block.Y {
 		// m.drawCb(block, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
 		// land on block
 		fig.vel.Y = 0
 		fig.pos.Y = block.Y - 0.1
 		fig.Land()
+		uy = true
+	} else {
+		colide := m.lvl.CubeAt(&fig.nextPos)
+		if colide != nil {
+			by := colide.Y + float64(BLOCK_SIZE)
+			if fig.pos.Y >= by && fig.nextPos.Y <= by {
+				uy = true
+				fig.pos.Y = by + 0.1
+				fig.vel.Y = 0
+
+				// m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
+			}
+		}
+
 	}
 
 	if fig.pos.X != fig.nextPos.X {
+		save := fig.nextPos.Y
 		fig.nextPos.Y = fig.pos.Y
 		colide := m.lvl.CubeAt(&fig.nextPos)
+		fig.nextPos.Y = save
 		if colide != nil {
-			// m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
+			// m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xffffffff)
 			if fig.pos.X < fig.nextPos.X {
 				// collide right
 				fig.pos.X = colide.X - 0.1
@@ -234,6 +249,9 @@ func (m *Mario) checkStep(c int) {
 		}
 	}
 
+	if !uy {
+		fig.pos.Y = fig.nextPos.Y
+	}
 }
 
 func (m *Mario) thnikStep(c int) {
