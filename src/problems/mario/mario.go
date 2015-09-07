@@ -12,15 +12,33 @@ import (
 type NeuronName int
 
 const (
-	I00       NeuronName = iota
-	I01       NeuronName = iota
-	I02       NeuronName = iota
-	I10       NeuronName = iota
-	I11       NeuronName = iota
-	I12       NeuronName = iota
-	I20       NeuronName = iota
-	I21       NeuronName = iota
-	I22       NeuronName = iota
+	I0 NeuronName = iota
+
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+
+	I24       NeuronName = iota
 	H1        NeuronName = iota
 	H2        NeuronName = iota
 	H3        NeuronName = iota
@@ -125,8 +143,8 @@ func NewMario(figCount int, size *util.Vector) *Mario {
 
 		for r := 0; r < (nrn(H4) - nrn(H1)); r++ {
 			// input to H
-			for inp := nrn(I00); inp <= nrn(I22); inp++ {
-				*nets[c].Synapse(inp+nrn(I00), r+nrn(H1)) = 0.0
+			for inp := nrn(I0); inp <= nrn(I24); inp++ {
+				*nets[c].Synapse(inp+nrn(I0), r+nrn(H1)) = 0.0
 			}
 
 			// R to output
@@ -256,14 +274,14 @@ func (m *Mario) thnikStep(c int) {
 	// m.figures[c].brain.Stimulate(nrn(velX), m.figures[c].fig.vel.X)
 	// m.figures[c].brain.Stimulate(nrn(velY), m.figures[c].fig.vel.Y)
 
-	var bmap uint16 = m.lvl.BoolMapAt(&m.figures[c].fig.pos)
+	var bmap uint32 = m.lvl.BoolMapAt(&m.figures[c].fig.pos)
 
 	var idx uint = 0
-	for idx = 0; idx < 9; idx++ {
+	for idx = 0; idx < uint(I24); idx++ {
 		if bmap&(1<<idx) == 0 {
-			m.figures[c].brain.Stimulate(int(idx)+nrn(I00), -1)
+			m.figures[c].brain.Stimulate(int(idx)+nrn(I0), -1)
 		} else {
-			m.figures[c].brain.Stimulate(int(idx)+nrn(I00), 1)
+			m.figures[c].brain.Stimulate(int(idx)+nrn(I0), 1)
 		}
 	}
 
