@@ -59,7 +59,7 @@ func (f *Figure) Move(dir int) {
 type Level struct {
 	size    util.Vector
 	blocks  [][]*util.Vector
-	bmap    [][]uint32
+	bmap    [][]uint64
 	figures []*Figure
 }
 
@@ -68,7 +68,23 @@ func (l *Level) makeHole(c *int) {
 
 	height := int(l.size.Y/float64(BLOCK_SIZE)) - 1 - 3
 
-	if neural.Chance(0.4) {
+	skip := OBSTACLE_SPACING * 2
+
+	if neural.Chance(0.75) {
+		size = skip
+		for iter := 0; iter < skip; iter++ {
+			if iter+*c >= len(l.blocks) {
+				break
+			}
+			if iter%5 == 0 {
+				x := float64((iter + *c) * BLOCK_SIZE)
+				y := float64((height + 3) * BLOCK_SIZE)
+				l.blocks[iter+*c][height+3] = util.NewVector(x, y)
+			}
+		}
+	}
+
+	if neural.Chance(0.3) {
 		for iter := -2; iter < size+3; iter++ {
 			xIdx := iter + *c
 			if xIdx < 0 || xIdx >= len(l.blocks) {
@@ -105,7 +121,7 @@ func NewLevel(w, h int) *Level {
 	lvl := &Level{
 		size:    *util.NewVector(float64(w), float64(h)),
 		blocks:  make([][]*util.Vector, blockW, blockW),
-		bmap:    make([][]uint32, blockW, blockW),
+		bmap:    make([][]uint64, blockW, blockW),
 		figures: make([]*Figure, 0),
 	}
 	fmt.Println("Mario: generating level...")
@@ -133,7 +149,7 @@ func NewLevel(w, h int) *Level {
 
 	fmt.Println("Mario: generating bool map...")
 	for c := 0; c < blockW; c++ {
-		lvl.bmap[c] = make([]uint32, blockH, blockH)
+		lvl.bmap[c] = make([]uint64, blockH, blockH)
 		for r := 0; r < blockH; r++ {
 			lvl.bmap[c][r] = lvl.boolMapAtIdx(c, r)
 		}
@@ -154,14 +170,14 @@ func (l *Level) IsSolid(pos *util.Vector) bool {
 	return l.CubeAt(pos) != nil
 }
 
-func (l *Level) boolMapAtIdx(cx, cy int) uint32 {
-	var res uint32 = 0
-	cx -= 2
-	cy -= 2
+func (l *Level) boolMapAtIdx(cx, cy int) uint64 {
+	var res uint64 = 0
+	cx -= 3
+	cy -= 3
 
 	var off uint = 0
-	for c := 0; c < 5; c++ {
-		for r := 0; r < 5; r++ {
+	for c := 0; c < 7; c++ {
+		for r := 0; r < 7; r++ {
 			if l.validCoord(cx+c, cy+r) && l.blocks[cx+c][cy+r] != nil {
 				res |= (1 << off)
 			}
@@ -172,7 +188,7 @@ func (l *Level) boolMapAtIdx(cx, cy int) uint32 {
 	return res
 }
 
-func (l *Level) BoolMapAt(pos *util.Vector) uint32 {
+func (l *Level) BoolMapAt(pos *util.Vector) uint64 {
 	cx, cy := l.ToLevelCoords(pos)
 	if l.validCoord(cx, cy) {
 		return l.bmap[cx][cy]

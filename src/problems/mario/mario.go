@@ -9,6 +9,8 @@ import (
 	"sort"
 )
 
+const idleThreshold uint32 = 100
+
 type NeuronName int
 
 const (
@@ -37,8 +39,32 @@ const (
 	_ NeuronName = iota
 	_ NeuronName = iota
 	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
 
-	I24       NeuronName = iota
+	I48       NeuronName = iota
 	H1        NeuronName = iota
 	H2        NeuronName = iota
 	H3        NeuronName = iota
@@ -143,7 +169,7 @@ func NewMario(figCount int, size *util.Vector) *Mario {
 
 		for r := 0; r < (nrn(H4) - nrn(H1)); r++ {
 			// input to H
-			for inp := nrn(I0); inp <= nrn(I24); inp++ {
+			for inp := nrn(I0); inp <= nrn(I48); inp++ {
 				*nets[c].Synapse(inp+nrn(I0), r+nrn(H1)) = 0.0
 			}
 
@@ -251,7 +277,10 @@ func (m *Mario) checkStep(c int) {
 	}
 
 	if !uy {
+		savex := fig.nextPos.X
+		fig.nextPos.X = fig.pos.X
 		colide := m.lvl.CubeAt(&fig.nextPos)
+		fig.nextPos.X = savex
 		if colide != nil {
 			by := colide.Y + float64(BLOCK_SIZE)
 			if fig.pos.Y >= by && fig.nextPos.Y <= by && fig.pos.X > colide.X+1 && fig.pos.X < colide.X+float64(BLOCK_SIZE)-1 {
@@ -268,10 +297,10 @@ func (m *Mario) checkStep(c int) {
 }
 
 func (m *Mario) thnikStep(c int) {
-	var bmap uint32 = m.lvl.BoolMapAt(&m.figures[c].fig.pos)
+	bmap := m.lvl.BoolMapAt(&m.figures[c].fig.pos)
 
 	var idx uint = 0
-	for idx = 0; idx < uint(I24); idx++ {
+	for idx = 0; idx < uint(I48); idx++ {
 		if bmap&(1<<idx) == 0 {
 			m.figures[c].brain.Stimulate(int(idx)+nrn(I0), -1)
 		} else {
@@ -281,19 +310,17 @@ func (m *Mario) thnikStep(c int) {
 
 	m.figures[c].brain.Step()
 
-	if m.figures[c].brain.ValueOf(nrn(jump)) > 0.95 {
+	if m.figures[c].brain.ValueOf(nrn(jump)) > 0.75 {
 		m.figures[c].fig.Jump()
 	}
 
 	xMoveValue := m.figures[c].brain.ValueOf(nrn(xMove))
-	if math.Abs(xMoveValue) > 0.95 {
+	if math.Abs(xMoveValue) > 0.75 {
 		m.figures[c].fig.Move(int(xMoveValue * 10))
 	}
 
 	m.figures[c].brain.Clear()
 }
-
-const idleThreshold uint32 = 100
 
 func (m *Mario) randNet() *neural.Net {
 	cutOff := 10.0
