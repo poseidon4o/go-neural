@@ -259,7 +259,7 @@ func (m *Mario) checkStep(c int) {
 				fig.pos.Y = by + 0.5
 				fig.vel.Y = 0
 
-				m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
+				// m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
 			}
 		} else {
 			fig.pos.Y = fig.nextPos.Y
@@ -268,12 +268,6 @@ func (m *Mario) checkStep(c int) {
 }
 
 func (m *Mario) thnikStep(c int) {
-	// discreteX := float64(int(m.figures[c].fig.pos.X / float64(OBSTACLE_SPACING*BLOCK_SIZE)))
-	// m.figures[c].brain.Stimulate(nrn(posX), discreteX)
-	// m.figures[c].brain.Stimulate(nrn(posY), m.figures[c].fig.pos.Y)
-	// m.figures[c].brain.Stimulate(nrn(velX), m.figures[c].fig.vel.X)
-	// m.figures[c].brain.Stimulate(nrn(velY), m.figures[c].fig.vel.Y)
-
 	var bmap uint32 = m.lvl.BoolMapAt(&m.figures[c].fig.pos)
 
 	var idx uint = 0

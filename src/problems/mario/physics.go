@@ -66,7 +66,7 @@ func (l *Level) makeHole(c *int) {
 
 	height := int(l.size.Y/float64(BLOCK_SIZE)) - 1 - 3
 
-	if neural.Chance(0.3) {
+	if neural.Chance(0.4) {
 		for iter := -2; iter < size+3; iter++ {
 			xIdx := iter + *c
 			if xIdx < 0 || xIdx >= len(l.blocks) {
@@ -117,7 +117,7 @@ func NewLevel(w, h int) *Level {
 
 		pr := c
 		if obs%OBSTACLE_SPACING == 0 {
-			if neural.Chance(0.5) {
+			if neural.Chance(0.7) {
 				lvl.makeHole(&c)
 			} else {
 				lvl.makeObstacle(&c)
