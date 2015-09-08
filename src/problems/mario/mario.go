@@ -9,7 +9,7 @@ import (
 	"sort"
 )
 
-const idleThreshold uint32 = 600
+const idleThreshold uint32 = 100
 
 type NeuronName int
 
@@ -256,58 +256,51 @@ func (m *Mario) checkStep(c int) {
 	// }
 
 	save := fig.pos
+	checkx, checky := true, true
 
 	if dx != 0 && dy != 0 && bmap.GridAt(dx, dy) {
-		vx, vy := fig.nextPos.X-fig.pos.X, fig.nextPos.Y-fig.pos.Y
-		if math.Abs(vx) > math.Abs(vy) {
-			fig.pos.X = fig.nextPos.X
-			fig.vel.Y = 0
+		slideX := bmap.GridAt(dx, 0) && bmap.GridAt(dx, dy)
+		slideY := bmap.GridAt(0, dy) && bmap.GridAt(dx, dy)
+		if slideX != slideY {
+			if slideX {
+				checkx = false
+				fig.nextPos.X = fig.pos.X
+			} else {
+				checky = false
+				fig.nextPos.Y = fig.pos.Y
+			}
+		}
+	}
+
+	if dx != 0 && bmap.GridAt(dx, 0) && checkx {
+		fig.vel.X = 0
+		if dx > 0 {
+			fig.pos.X = float64(tx*BLOCK_SIZE) - 0.1
 		} else {
-			fig.pos.Y = fig.nextPos.Y
-			fig.vel.X = 0
+			fig.pos.X = float64((tx+1)*BLOCK_SIZE) + 0.1
 		}
 	} else {
-		if dx != 0 && bmap.GridAt(dx, 0) {
-			fig.vel.X = 0
-			if dx > 0 {
-				fig.pos.X = float64(tx*BLOCK_SIZE) - 0.1
-			} else {
-				fig.pos.X = float64((tx+1)*BLOCK_SIZE) + 0.1
-			}
-		} else {
-			fig.pos.X = fig.nextPos.X
-		}
+		fig.pos.X = fig.nextPos.X
+	}
 
-		if dy != 0 && bmap.GridAt(0, dy) {
-			fig.vel.Y = 0
-			if dy > 0 {
-				fig.pos.Y = float64(ty*BLOCK_SIZE) - 0.1
-				fig.Land()
-			} else {
-				fig.pos.Y = float64((ty+1)*BLOCK_SIZE) + 0.1
-			}
+	if dy != 0 && bmap.GridAt(0, dy) && checky {
+		fig.vel.Y = 0
+		if dy > 0 {
+			fig.pos.Y = float64(ty*BLOCK_SIZE) - 0.1
+			fig.Land()
 		} else {
-			fig.pos.Y = fig.nextPos.Y
+			fig.pos.Y = float64((ty+1)*BLOCK_SIZE) + 0.1
 		}
+	} else {
+		fig.pos.Y = fig.nextPos.Y
 	}
 
 	nmap := m.lvl.BoolMapAt(&fig.pos)
 	if nmap.GridAt(0, 0) && !bmap.GridAt(0, 0) {
-		tx, ty := m.lvl.ToLevelCoords(&fig.pos)
-		m.drawCb(util.NewVector(float64(tx*BLOCK_SIZE), float64(ty*BLOCK_SIZE)), util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
-
-		fmt.Println("--------------", dx, dy, save, fig.pos, fig.nextPos)
-		for p := -3; p <= 3; p++ {
-			for q := -3; q <= 3; q++ {
-				if bmap.GridAt(p, q) {
-					fmt.Print("1 ")
-				} else {
-					fmt.Print("0 ")
-				}
-			}
-			fmt.Println("")
-		}
-
+		fig.pos = save
+		diff := fig.nextPos.Add(fig.pos.Neg()).Scale(0.5)
+		fig.nextPos = *fig.nextPos.Add(diff.Neg())
+		m.checkStep(c)
 	}
 }
 

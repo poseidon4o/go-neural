@@ -22,7 +22,7 @@ var JUMP_FORCE util.Vector = util.Vector{
 }
 
 var X_ACCELERATION util.Vector = util.Vector{
-	X: 20,
+	X: 10,
 	Y: 0,
 }
 
@@ -66,13 +66,13 @@ func (b *BoolMap) Set(idx int) {
 	*b |= 1 << uint(idx)
 }
 
-func (b *BoolMap) GridAt(y, x int) bool {
-	idx := x + y*7 + (int(49) / 2)
+func (b *BoolMap) GridAt(x, y int) bool {
+	idx := y + x*7 + (int(49) / 2)
 	return b.At(idx)
 }
 
 func (b *BoolMap) GridSet(x, y int) {
-	idx := x + y*7 + (int(49) / 2)
+	idx := y + x*7 + (int(49) / 2)
 	b.Set(idx)
 }
 
@@ -156,7 +156,7 @@ func NewLevel(w, h int) *Level {
 
 		pr := c
 		if obs%OBSTACLE_SPACING == 0 {
-			if neural.Chance(0) {
+			if neural.Chance(0.7) {
 				lvl.makeHole(&c)
 			} else {
 				lvl.makeObstacle(&c)
