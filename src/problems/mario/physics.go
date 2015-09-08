@@ -216,7 +216,7 @@ func (l *Level) FloorAt(pos *util.Vector) *util.Vector {
 }
 
 func (l *Level) NewFigurePos() *util.Vector {
-	return util.NewVector(1, 1)
+	return util.NewVector(float64(BLOCK_SIZE)/2, l.size.Y-float64(BLOCK_SIZE)*2)
 }
 
 func (l *Level) AddFigures(count int) {
