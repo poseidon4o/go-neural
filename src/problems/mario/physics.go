@@ -22,7 +22,7 @@ var JUMP_FORCE util.Vector = util.Vector{
 }
 
 var X_ACCELERATION util.Vector = util.Vector{
-	X: 200,
+	X: 20,
 	Y: 0,
 }
 
@@ -56,10 +56,30 @@ func (f *Figure) Move(dir int) {
 	f.vel = *f.vel.Add(&acc)
 }
 
+type BoolMap uint64
+
+func (b *BoolMap) At(idx int) bool {
+	return (*b>>uint(idx))&1 == 1
+}
+
+func (b *BoolMap) Set(idx int) {
+	*b |= 1 << uint(idx)
+}
+
+func (b *BoolMap) GridAt(y, x int) bool {
+	idx := x + y*7 + (int(49) / 2)
+	return b.At(idx)
+}
+
+func (b *BoolMap) GridSet(x, y int) {
+	idx := x + y*7 + (int(49) / 2)
+	b.Set(idx)
+}
+
 type Level struct {
 	size    util.Vector
 	blocks  [][]*util.Vector
-	bmap    [][]uint64
+	bmap    [][]BoolMap
 	figures []*Figure
 }
 
@@ -121,7 +141,7 @@ func NewLevel(w, h int) *Level {
 	lvl := &Level{
 		size:    *util.NewVector(float64(w), float64(h)),
 		blocks:  make([][]*util.Vector, blockW, blockW),
-		bmap:    make([][]uint64, blockW, blockW),
+		bmap:    make([][]BoolMap, blockW, blockW),
 		figures: make([]*Figure, 0),
 	}
 	fmt.Println("Mario: generating level...")
@@ -136,7 +156,7 @@ func NewLevel(w, h int) *Level {
 
 		pr := c
 		if obs%OBSTACLE_SPACING == 0 {
-			if neural.Chance(0.7) {
+			if neural.Chance(0) {
 				lvl.makeHole(&c)
 			} else {
 				lvl.makeObstacle(&c)
@@ -149,7 +169,7 @@ func NewLevel(w, h int) *Level {
 
 	fmt.Println("Mario: generating bool map...")
 	for c := 0; c < blockW; c++ {
-		lvl.bmap[c] = make([]uint64, blockH, blockH)
+		lvl.bmap[c] = make([]BoolMap, blockH, blockH)
 		for r := 0; r < blockH; r++ {
 			lvl.bmap[c][r] = lvl.boolMapAtIdx(c, r)
 		}
@@ -162,6 +182,12 @@ func (l *Level) ToLevelCoords(pos *util.Vector) (int, int) {
 	return int(pos.X / float64(BLOCK_SIZE)), int(pos.Y / float64(BLOCK_SIZE))
 }
 
+func (l *Level) OffsetInLevelGrid(from, to *util.Vector) (int, int) {
+	fx, fy := l.ToLevelCoords(from)
+	tx, ty := l.ToLevelCoords(to)
+	return tx - fx, ty - fy
+}
+
 func (l *Level) validCoord(w, h int) bool {
 	return w >= 0 && w < (int(l.size.X)/BLOCK_SIZE) && h >= 0 && h < (int(l.size.Y)/BLOCK_SIZE)
 }
@@ -170,16 +196,16 @@ func (l *Level) IsSolid(pos *util.Vector) bool {
 	return l.CubeAt(pos) != nil
 }
 
-func (l *Level) boolMapAtIdx(cx, cy int) uint64 {
-	var res uint64 = 0
+func (l *Level) boolMapAtIdx(cx, cy int) BoolMap {
+	var res BoolMap = 0
 	cx -= 3
 	cy -= 3
 
-	var off uint = 0
+	off := 0
 	for c := 0; c < 7; c++ {
 		for r := 0; r < 7; r++ {
 			if l.validCoord(cx+c, cy+r) && l.blocks[cx+c][cy+r] != nil {
-				res |= (1 << off)
+				res.Set(off)
 			}
 			off++
 		}
@@ -188,7 +214,7 @@ func (l *Level) boolMapAtIdx(cx, cy int) uint64 {
 	return res
 }
 
-func (l *Level) BoolMapAt(pos *util.Vector) uint64 {
+func (l *Level) BoolMapAt(pos *util.Vector) BoolMap {
 	cx, cy := l.ToLevelCoords(pos)
 	if l.validCoord(cx, cy) {
 		return l.bmap[cx][cy]
@@ -233,13 +259,13 @@ func (l *Level) AddFigures(count int) {
 
 func (l *Level) Step(dt float64) {
 	for c := range l.figures {
-		// position += timestep * (velocity + timestep * acceleration / 2);
+		// nextPos = position + timestep * (velocity + timestep * acceleration / 2);
 		// TODO not use go
 		l.figures[c].nextPos = *l.figures[c].pos.Add(G_FORCE.Scale(dt / 2).Add(&l.figures[c].vel).Scale(dt))
 
 		// velocity += timestep * acceleration;
 		l.figures[c].vel = *l.figures[c].vel.Add(G_FORCE.Scale(dt))
-		// l.figures[c].vel.X *= (1 - 3*dt)
-		l.figures[c].vel.X = 0
+		l.figures[c].vel.X *= (1 - 3*dt)
+		// l.figures[c].vel.X = 0
 	}
 }

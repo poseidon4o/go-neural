@@ -133,7 +133,9 @@ func (m *Mario) LogicTick(dt float64) {
 	stepC := func(r int) {
 		m.checkStep(r)
 		m.mutateStep(r)
-		m.thnikStep(r)
+		if r > 0 {
+			m.thnikStep(r)
+		}
 		wg <- struct{}{}
 	}
 
@@ -245,63 +247,76 @@ func (m *Mario) checkStep(c int) {
 		fig.nextPos.X = m.lvl.size.X
 	}
 
-	block := m.lvl.FloorAt(&fig.pos)
-	uy := false
+	bmap := m.lvl.BoolMapAt(&fig.pos)
+	dx, dy := m.lvl.OffsetInLevelGrid(&fig.pos, &fig.nextPos)
+	tx, ty := m.lvl.ToLevelCoords(&fig.nextPos)
 
-	if block != nil && fig.nextPos.Y >= block.Y {
-		// m.drawCb(block, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
-		// land on block
-		fig.vel.Y = 0
-		fig.pos.Y = block.Y - 0.5
-		fig.Land()
-		uy = true
-	}
+	// if bmap.GridAt(dx, dy) {
+	// 	m.drawCb(util.NewVector(float64(tx*BLOCK_SIZE), float64(ty*BLOCK_SIZE)), util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
+	// }
 
-	if fig.pos.X != fig.nextPos.X {
-		save := fig.nextPos.Y
-		fig.nextPos.Y = fig.pos.Y
-		colide := m.lvl.CubeAt(&fig.nextPos)
-		fig.nextPos.Y = save
-		if colide != nil {
-			// m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xffffffff)
-			if fig.pos.X < fig.nextPos.X {
-				// collide right
-				fig.pos.X = colide.X - 0.5
+	save := fig.pos
+
+	if dx != 0 && dy != 0 && bmap.GridAt(dx, dy) {
+		vx, vy := fig.nextPos.X-fig.pos.X, fig.nextPos.Y-fig.pos.Y
+		if math.Abs(vx) > math.Abs(vy) {
+			fig.pos.X = fig.nextPos.X
+			fig.vel.Y = 0
+		} else {
+			fig.pos.Y = fig.nextPos.Y
+			fig.vel.X = 0
+		}
+	} else {
+		if dx != 0 && bmap.GridAt(dx, 0) {
+			fig.vel.X = 0
+			if dx > 0 {
+				fig.pos.X = float64(tx*BLOCK_SIZE) - 0.1
 			} else {
-				// colide left
-				fig.pos.X = colide.X + float64(BLOCK_SIZE) + 0.5
+				fig.pos.X = float64((tx+1)*BLOCK_SIZE) + 0.1
 			}
 		} else {
 			fig.pos.X = fig.nextPos.X
 		}
-	}
 
-	if !uy {
-		savex := fig.nextPos.X
-		fig.nextPos.X = fig.pos.X
-		colide := m.lvl.CubeAt(&fig.nextPos)
-		fig.nextPos.X = savex
-		if colide != nil {
-			by := colide.Y + float64(BLOCK_SIZE)
-			if fig.pos.Y >= by && fig.nextPos.Y <= by && fig.pos.X > colide.X+1 && fig.pos.X < colide.X+float64(BLOCK_SIZE)-1 {
-				uy = true
-				fig.pos.Y = by + 0.5
-				fig.vel.Y = 0
-
-				// m.drawCb(colide, util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
+		if dy != 0 && bmap.GridAt(0, dy) {
+			fig.vel.Y = 0
+			if dy > 0 {
+				fig.pos.Y = float64(ty*BLOCK_SIZE) - 0.1
+				fig.Land()
+			} else {
+				fig.pos.Y = float64((ty+1)*BLOCK_SIZE) + 0.1
 			}
 		} else {
 			fig.pos.Y = fig.nextPos.Y
 		}
+	}
+
+	nmap := m.lvl.BoolMapAt(&fig.pos)
+	if nmap.GridAt(0, 0) && !bmap.GridAt(0, 0) {
+		tx, ty := m.lvl.ToLevelCoords(&fig.pos)
+		m.drawCb(util.NewVector(float64(tx*BLOCK_SIZE), float64(ty*BLOCK_SIZE)), util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
+
+		fmt.Println("--------------", dx, dy, save, fig.pos, fig.nextPos)
+		for p := -3; p <= 3; p++ {
+			for q := -3; q <= 3; q++ {
+				if bmap.GridAt(p, q) {
+					fmt.Print("1 ")
+				} else {
+					fmt.Print("0 ")
+				}
+			}
+			fmt.Println("")
+		}
+
 	}
 }
 
 func (m *Mario) thnikStep(c int) {
 	bmap := m.lvl.BoolMapAt(&m.figures[c].fig.pos)
 
-	var idx uint = 0
-	for idx = 0; idx < uint(I48); idx++ {
-		if bmap&(1<<idx) == 0 {
+	idx := 0
+	for idx = 0; idx < nrn(I48); idx++ {
+		if bmap.At(idx) {
 			m.figures[c].brain.Stimulate(int(idx)+nrn(I0), -1)
 		} else {
 			m.figures[c].brain.Stimulate(int(idx)+nrn(I0), 1)

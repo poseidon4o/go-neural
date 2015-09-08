@@ -36,7 +36,7 @@ func main() {
 	fmt.Println("")
 
 	doDraw := true
-	doDev := false
+	doDev := true
 
 	W := 1300
 	H := 700
