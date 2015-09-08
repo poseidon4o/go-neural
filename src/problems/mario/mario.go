@@ -9,7 +9,7 @@ import (
 	"sort"
 )
 
-const idleThreshold uint32 = 100
+const idleThreshold uint32 = 600
 
 type NeuronName int
 
