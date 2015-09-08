@@ -7,82 +7,30 @@ import (
 	"time"
 )
 
-const RAND_NUMBERS_SIZE int = 300000
-const RAND_BUFFER_COUNT int = 10
-const RAND_BUFFER_SIZE int = RAND_NUMBERS_SIZE / RAND_BUFFER_COUNT
+const RAND_BUFFER_SIZE int = 300000
 
-var gen [RAND_BUFFER_COUNT]*rand.Rand
-var genData = [RAND_BUFFER_COUNT]chan float64{
-	make(chan float64, RAND_BUFFER_SIZE),
-	make(chan float64, RAND_BUFFER_SIZE),
-	make(chan float64, RAND_BUFFER_SIZE),
-	make(chan float64, RAND_BUFFER_SIZE),
-	make(chan float64, RAND_BUFFER_SIZE),
-	make(chan float64, RAND_BUFFER_SIZE),
-	make(chan float64, RAND_BUFFER_SIZE),
-	make(chan float64, RAND_BUFFER_SIZE),
-	make(chan float64, RAND_BUFFER_SIZE),
-	make(chan float64, RAND_BUFFER_SIZE),
-}
+var values []float64
+var generator rand.Rand
+var idx int
 
 var ChanRand int = 0
 var GlobRand int = 0
 
 func init() {
+	idx = 0
 	fmt.Println("Genetic: pre-generating random values...")
-	for c := 0; c < RAND_BUFFER_COUNT; c++ {
-		gen[c] = rand.New(rand.NewSource(time.Now().UnixNano()))
-		go func(r int) {
-			for {
-				genData[r] <- gen[r].Float64()
-			}
-		}(c)
+	values = make([]float64, RAND_BUFFER_SIZE, RAND_BUFFER_SIZE)
+	generator = *rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	for c := 0; c < RAND_BUFFER_SIZE; c++ {
+		values[c] = generator.Float64()
 	}
 }
 
 func Rand() float64 {
-	chRead := false
-	var f float64
-	select {
-	case f = <-genData[0]:
-		chRead = true
-		break
-	case f = <-genData[1]:
-		chRead = true
-		break
-	case f = <-genData[2]:
-		chRead = true
-		break
-	case f = <-genData[3]:
-		chRead = true
-		break
-	case f = <-genData[4]:
-		chRead = true
-		break
-	case f = <-genData[5]:
-		chRead = true
-		break
-	case f = <-genData[6]:
-		chRead = true
-		break
-	case f = <-genData[7]:
-		chRead = true
-		break
-	case f = <-genData[8]:
-		chRead = true
-		break
-	case f = <-genData[9]:
-		chRead = true
-		break
-	default:
-		f = rand.Float64()
-	}
-	if chRead {
-		ChanRand++
-	} else {
-		GlobRand++
-	}
-	return f
+	idx++
+	myIdx := idx
+	return values[myIdx%RAND_BUFFER_SIZE]
 }
 
 func RandMax(max float64) float64 {
