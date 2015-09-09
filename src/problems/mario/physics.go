@@ -22,7 +22,7 @@ var JUMP_FORCE util.Vector = util.Vector{
 }
 
 var X_ACCELERATION util.Vector = util.Vector{
-	X: 10,
+	X: 15,
 	Y: 0,
 }
 

@@ -133,9 +133,7 @@ func (m *Mario) LogicTick(dt float64) {
 	stepC := func(r int) {
 		m.checkStep(r)
 		m.mutateStep(r)
-		if r > 0 {
-			m.thnikStep(r)
-		}
+		m.thnikStep(r)
 		wg <- struct{}{}
 	}
 
@@ -255,24 +253,23 @@ func (m *Mario) checkStep(c int) {
 	// 	m.drawCb(util.NewVector(float64(tx*BLOCK_SIZE), float64(ty*BLOCK_SIZE)), util.NewVector(float64(BLOCK_SIZE), float64(BLOCK_SIZE)), 0xff00ffff)
 	// }
 
-	save := fig.pos
 	checkx, checky := true, true
 
 	if dx != 0 && dy != 0 && bmap.GridAt(dx, dy) {
-		slideX := bmap.GridAt(dx, 0) && bmap.GridAt(dx, dy)
-		slideY := bmap.GridAt(0, dy) && bmap.GridAt(dx, dy)
+		slideY := bmap.GridAt(dx, 0) && bmap.GridAt(dx, dy) && !bmap.GridAt(0, dy)
+		slideX := bmap.GridAt(0, dy) && bmap.GridAt(dx, dy) && !bmap.GridAt(dx, 0)
 		if slideX != slideY {
 			if slideX {
 				checkx = false
-				fig.nextPos.X = fig.pos.X
+				fig.nextPos.Y = fig.pos.Y
 			} else {
 				checky = false
-				fig.nextPos.Y = fig.pos.Y
+				fig.nextPos.X = fig.pos.X
 			}
 		}
 	}
 
-	if dx != 0 && bmap.GridAt(dx, 0) && checkx {
+	if dx != 0 && bmap.GridAt(dx, dy) && checkx {
 		fig.vel.X = 0
 		if dx > 0 {
 			fig.pos.X = float64(tx*BLOCK_SIZE) - 0.1
@@ -283,7 +280,7 @@ func (m *Mario) checkStep(c int) {
 		fig.pos.X = fig.nextPos.X
 	}
 
-	if dy != 0 && bmap.GridAt(0, dy) && checky {
+	if dy != 0 && bmap.GridAt(dx, dy) && checky {
 		fig.vel.Y = 0
 		if dy > 0 {
 			fig.pos.Y = float64(ty*BLOCK_SIZE) - 0.1
@@ -293,14 +290,6 @@ func (m *Mario) checkStep(c int) {
 		}
 	} else {
 		fig.pos.Y = fig.nextPos.Y
-	}
-
-	nmap := m.lvl.BoolMapAt(&fig.pos)
-	if nmap.GridAt(0, 0) && !bmap.GridAt(0, 0) {
-		fig.pos = save
-		diff := fig.nextPos.Add(fig.pos.Neg()).Scale(0.5)
-		fig.nextPos = *fig.nextPos.Add(diff.Neg())
-		m.checkStep(c)
 	}
 }
 
