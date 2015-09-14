@@ -16,70 +16,68 @@ const idleThreshold uint32 = 100
 type NeuronName int
 
 const (
-	I0  NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	_   NeuronName = iota
-	I48 NeuronName = iota
+	I0 NeuronName = iota
 
-	H1 NeuronName = iota
-	H2 NeuronName = iota
-	H3 NeuronName = iota
-	H4 NeuronName = iota
-	H5 NeuronName = iota
-	H6 NeuronName = iota
-	H7 NeuronName = iota
-	H8 NeuronName = iota
-	H9 NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
+	_ NeuronName = iota
 
-	jump  NeuronName = iota
-	xMove NeuronName = iota
-
-	NRN_COUNT int = iota
+	I48       NeuronName = iota
+	H1        NeuronName = iota
+	H2        NeuronName = iota
+	H3        NeuronName = iota
+	H4        NeuronName = iota
+	R1        NeuronName = iota
+	R2        NeuronName = iota
+	R3        NeuronName = iota
+	R4        NeuronName = iota
+	jump      NeuronName = iota
+	xMove     NeuronName = iota
+	NRN_COUNT int        = iota
 )
 
 func nrn(name NeuronName) int {
@@ -205,109 +203,26 @@ func NewMario(figCount int, size *util.Vector) *Mario {
 	level := NewLevel(int(size.X), int(size.Y))
 	level.AddFigures(figCount)
 
-	finp := func(id int) int {
-		return nrn(I0 + NeuronName(id))
-	}
-
 	nets := make([]*neural.Net, figCount, figCount)
 	for c := range nets {
 		nets[c] = neural.NewNet(NRN_COUNT)
 
-		for r := 0; r < 6; r++ {
-			*nets[c].Synapse(nrn(H1)+r, nrn(jump)) = 0.0
-			*nets[c].Synapse(nrn(H1)+r, nrn(xMove)) = 0.0
+		for r := 0; r < (nrn(H4) - nrn(H1)); r++ {
+			// input to H
+			for inp := nrn(I0); inp <= nrn(I48); inp++ {
+				*nets[c].Synapse(inp+nrn(I0), r+nrn(H1)) = 0.0
+			}
+
+			// R to output
+			*nets[c].Synapse(r+nrn(R1), nrn(jump)) = 0.0
+			*nets[c].Synapse(r+nrn(R1), nrn(xMove)) = 0.0
 		}
 
-		// connect first layer to the second one with 3x3 radius
-		*nets[c].Synapse(finp(0), nrn(H1)) = 0.0
-		*nets[c].Synapse(finp(1), nrn(H1)) = 0.0
-		*nets[c].Synapse(finp(2), nrn(H1)) = 0.0
-		*nets[c].Synapse(finp(7), nrn(H1)) = 0.0
-		*nets[c].Synapse(finp(8), nrn(H1)) = 0.0
-		*nets[c].Synapse(finp(9), nrn(H1)) = 0.0
-		*nets[c].Synapse(finp(14), nrn(H1)) = 0.0
-		*nets[c].Synapse(finp(15), nrn(H1)) = 0.0
-		*nets[c].Synapse(finp(16), nrn(H1)) = 0.0
-
-		*nets[c].Synapse(finp(2), nrn(H2)) = 0.0
-		*nets[c].Synapse(finp(3), nrn(H2)) = 0.0
-		*nets[c].Synapse(finp(4), nrn(H2)) = 0.0
-		*nets[c].Synapse(finp(9), nrn(H2)) = 0.0
-		*nets[c].Synapse(finp(10), nrn(H2)) = 0.0
-		*nets[c].Synapse(finp(11), nrn(H2)) = 0.0
-		*nets[c].Synapse(finp(16), nrn(H2)) = 0.0
-		*nets[c].Synapse(finp(17), nrn(H2)) = 0.0
-		*nets[c].Synapse(finp(18), nrn(H2)) = 0.0
-
-		*nets[c].Synapse(finp(4), nrn(H3)) = 0.0
-		*nets[c].Synapse(finp(5), nrn(H3)) = 0.0
-		*nets[c].Synapse(finp(6), nrn(H3)) = 0.0
-		*nets[c].Synapse(finp(11), nrn(H3)) = 0.0
-		*nets[c].Synapse(finp(12), nrn(H3)) = 0.0
-		*nets[c].Synapse(finp(13), nrn(H3)) = 0.0
-		*nets[c].Synapse(finp(18), nrn(H3)) = 0.0
-		*nets[c].Synapse(finp(19), nrn(H3)) = 0.0
-		*nets[c].Synapse(finp(20), nrn(H3)) = 0.0
-
-		*nets[c].Synapse(finp(14), nrn(H4)) = 0.0
-		*nets[c].Synapse(finp(15), nrn(H4)) = 0.0
-		*nets[c].Synapse(finp(16), nrn(H4)) = 0.0
-		*nets[c].Synapse(finp(21), nrn(H4)) = 0.0
-		*nets[c].Synapse(finp(22), nrn(H4)) = 0.0
-		*nets[c].Synapse(finp(23), nrn(H4)) = 0.0
-		*nets[c].Synapse(finp(28), nrn(H4)) = 0.0
-		*nets[c].Synapse(finp(29), nrn(H4)) = 0.0
-		*nets[c].Synapse(finp(30), nrn(H4)) = 0.0
-
-		*nets[c].Synapse(finp(17), nrn(H5)) = 0.0
-		*nets[c].Synapse(finp(17), nrn(H5)) = 0.0
-		*nets[c].Synapse(finp(18), nrn(H5)) = 0.0
-		*nets[c].Synapse(finp(23), nrn(H5)) = 0.0
-		*nets[c].Synapse(finp(24), nrn(H5)) = 0.0
-		*nets[c].Synapse(finp(25), nrn(H5)) = 0.0
-		*nets[c].Synapse(finp(30), nrn(H5)) = 0.0
-		*nets[c].Synapse(finp(31), nrn(H5)) = 0.0
-		*nets[c].Synapse(finp(32), nrn(H5)) = 0.0
-
-		*nets[c].Synapse(finp(18), nrn(H6)) = 0.0
-		*nets[c].Synapse(finp(19), nrn(H6)) = 0.0
-		*nets[c].Synapse(finp(20), nrn(H6)) = 0.0
-		*nets[c].Synapse(finp(25), nrn(H6)) = 0.0
-		*nets[c].Synapse(finp(26), nrn(H6)) = 0.0
-		*nets[c].Synapse(finp(27), nrn(H6)) = 0.0
-		*nets[c].Synapse(finp(32), nrn(H6)) = 0.0
-		*nets[c].Synapse(finp(33), nrn(H6)) = 0.0
-		*nets[c].Synapse(finp(34), nrn(H6)) = 0.0
-
-		*nets[c].Synapse(finp(28), nrn(H7)) = 0.0
-		*nets[c].Synapse(finp(29), nrn(H7)) = 0.0
-		*nets[c].Synapse(finp(30), nrn(H7)) = 0.0
-		*nets[c].Synapse(finp(35), nrn(H7)) = 0.0
-		*nets[c].Synapse(finp(36), nrn(H7)) = 0.0
-		*nets[c].Synapse(finp(37), nrn(H7)) = 0.0
-		*nets[c].Synapse(finp(42), nrn(H7)) = 0.0
-		*nets[c].Synapse(finp(43), nrn(H7)) = 0.0
-		*nets[c].Synapse(finp(44), nrn(H7)) = 0.0
-
-		*nets[c].Synapse(finp(30), nrn(H8)) = 0.0
-		*nets[c].Synapse(finp(31), nrn(H8)) = 0.0
-		*nets[c].Synapse(finp(32), nrn(H8)) = 0.0
-		*nets[c].Synapse(finp(37), nrn(H8)) = 0.0
-		*nets[c].Synapse(finp(38), nrn(H8)) = 0.0
-		*nets[c].Synapse(finp(39), nrn(H8)) = 0.0
-		*nets[c].Synapse(finp(44), nrn(H8)) = 0.0
-		*nets[c].Synapse(finp(45), nrn(H8)) = 0.0
-		*nets[c].Synapse(finp(46), nrn(H8)) = 0.0
-
-		*nets[c].Synapse(finp(32), nrn(H9)) = 0.0
-		*nets[c].Synapse(finp(33), nrn(H9)) = 0.0
-		*nets[c].Synapse(finp(34), nrn(H9)) = 0.0
-		*nets[c].Synapse(finp(39), nrn(H9)) = 0.0
-		*nets[c].Synapse(finp(40), nrn(H9)) = 0.0
-		*nets[c].Synapse(finp(41), nrn(H9)) = 0.0
-		*nets[c].Synapse(finp(46), nrn(H9)) = 0.0
-		*nets[c].Synapse(finp(47), nrn(H9)) = 0.0
-		*nets[c].Synapse(finp(48), nrn(H9)) = 0.0
+		for r := 0; r < (nrn(H4) - nrn(H1)); r++ {
+			for q := 0; q < (nrn(H4) - nrn(H1)); q++ {
+				*nets[c].Synapse(r+nrn(H1), q+nrn(R1)) = 0.0
+			}
+		}
 
 		nets[c].Randomize()
 	}
@@ -468,7 +383,8 @@ func (m *Mario) mutateStep(c int) {
 			m.figures[c].brain.Mutate(0.75)
 			m.figures[c].bestX *= 0.25
 		} else {
-			if neural.Chance(0.5) {
+			swapChance := (float64(c) / float64(len(m.figures))) * 2.0
+			if neural.Chance(swapChance) {
 				*m.figures[c].brain = *neural.Cross2(m.randNet(), m.randNet())
 			}
 			m.figures[c].brain.MutateWithMagnitude(0.01, 0.1)
