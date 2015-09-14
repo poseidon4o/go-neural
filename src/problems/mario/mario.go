@@ -1,11 +1,13 @@
 package mario
 
 import (
+	"bufio"
 	"fmt"
 	neural "github.com/poseidon4o/go-neural/src/neural"
 	util "github.com/poseidon4o/go-neural/src/util"
 	"math"
 	"math/rand"
+	"os"
 	"sort"
 )
 
@@ -114,6 +116,44 @@ type Mario struct {
 	drawSize int
 }
 
+const saveName = "mario-save.dat"
+
+func (m *Mario) SaveNetsToFile() {
+	file, err := os.Create(saveName)
+	if err != nil {
+		fmt.Println("Failed to open file ", saveName)
+		return
+	}
+	defer file.Close()
+
+	w := bufio.NewWriter(file)
+	fmt.Fprintf(w, "%d\n", len(m.figures))
+	for c := range m.figures {
+		fmt.Fprintln(w, "")
+		m.figures[c].brain.WriteTo(w)
+	}
+	w.Flush()
+	fmt.Println("Saved marion to ", saveName)
+}
+
+func (m *Mario) LoadNetsFromFile() {
+	file, err := os.Open(saveName)
+	if err != nil {
+		fmt.Println("Failed to open file ", saveName)
+		return
+	}
+	defer file.Close()
+
+	r := bufio.NewReader(file)
+	cnt := 0
+	fmt.Fscanf(r, "%d", cnt)
+	m = NewMario(cnt, &m.lvl.size)
+	for c := 0; c < cnt; c++ {
+		m.figures[c].brain.ReadFrom(r)
+	}
+	fmt.Println("Loaded mario from ", saveName)
+}
+
 func (m *Mario) Complete() float64 {
 	return m.figures[0].bestX / m.lvl.size.X
 }
@@ -178,6 +218,7 @@ func NewMario(figCount int, size *util.Vector) *Mario {
 			*nets[c].Synapse(nrn(H1)+r, nrn(xMove)) = 0.0
 		}
 
+		// connect first layer to the second one with 3x3 radius
 		*nets[c].Synapse(finp(0), nrn(H1)) = 0.0
 		*nets[c].Synapse(finp(1), nrn(H1)) = 0.0
 		*nets[c].Synapse(finp(2), nrn(H1)) = 0.0

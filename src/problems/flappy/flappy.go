@@ -53,6 +53,14 @@ type Flappy struct {
 	drawSize int
 }
 
+func (f *Flappy) SaveNetsToFile() {
+
+}
+
+func (f *Flappy) LoadNetsFromFile() {
+
+}
+
 func (f *Flappy) Jump() {
 	f.birds[0].bird.Jump()
 }

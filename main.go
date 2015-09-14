@@ -20,6 +20,8 @@ type DrawableProblem interface {
 	Done() bool
 	Jump()
 	Move(int)
+	SaveNetsToFile()
+	LoadNetsFromFile()
 }
 
 func main() {
@@ -99,6 +101,9 @@ func main() {
 	fl := flappy.NewFlappy(figCount, util.NewVector(float64(LVL_W), float64(H)))
 	mr := mario.NewMario(figCount, util.NewVector(float64(LVL_W), float64(H)))
 
+	mr.LoadNetsFromFile()
+	fl.LoadNetsFromFile()
+
 	fl.SetDrawRectCb(drawCb)
 	mr.SetDrawRectCb(drawCb)
 
@@ -166,6 +171,8 @@ func main() {
 					offset = int(math.Max(math.Min(float64(LVL_W-W), game.Complete()*float64(LVL_W)-float64(W)/2), 0))
 				case sdl.K_HOME:
 					offset = 0
+				case sdl.K_s:
+					game.SaveNetsToFile()
 				}
 			}
 		}
