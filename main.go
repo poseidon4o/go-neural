@@ -47,6 +47,7 @@ func main() {
 
 	var FPS float64 = 60.0
 	FRAME_TIME_MS := 1000 / FPS
+	FRAME_TIME := time.Millisecond * time.Duration(FRAME_TIME_MS)
 
 	sdl.Init(sdl.INIT_EVERYTHING)
 
@@ -115,13 +116,26 @@ func main() {
 	frame := 0
 	var averageFrameTime float64 = FRAME_TIME_MS * 1000000 // in nanosec
 	start := time.Now()
+	lastDrawTime := time.Now()
+	lastReportTime := time.Now()
 	for {
 		start = time.Now()
 
 		if doDraw {
-			window.UpdateSurface()
-			surface.FillRect(&clearRect, 0xffffffff)
-			game.DrawTick()
+			if doFastForward {
+				if !lastDrawTime.Add(FRAME_TIME).After(start) {
+					lastDrawTime = start
+					window.UpdateSurface()
+					surface.FillRect(&clearRect, 0xffffffff)
+					game.DrawTick()
+				}
+			} else {
+				lastDrawTime = start
+				window.UpdateSurface()
+				surface.FillRect(&clearRect, 0xffffffff)
+				game.DrawTick()
+			}
+
 		} else if frame%10 == 0 {
 			// update only 10% of the frames
 			window.UpdateSurface()
@@ -196,8 +210,8 @@ func main() {
 			break
 		}
 
-		if frame > int(FPS) {
-			frame = 0
+		if !lastReportTime.Add(time.Second).After(start) {
+			lastReportTime = start
 			fmt.Printf("CHRand %d\tGRand %d\tG/C %f\n", neural.ChanRand, neural.GlobRand, float64(neural.GlobRand)/float64(neural.ChanRand))
 			neural.ChanRand = 0
 			neural.GlobRand = 0
