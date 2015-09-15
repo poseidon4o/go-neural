@@ -39,6 +39,7 @@ func main() {
 
 	doDraw := true
 	doDev := false
+	doFastForward := false
 
 	W := 1300
 	H := 700
@@ -64,7 +65,7 @@ func main() {
 	clearRect := sdl.Rect{0, 0, int32(W), int32(H)}
 	surface.FillRect(&clearRect, 0xffffffff)
 
-	figCount := 10000
+	figCount := 100
 	if doDev {
 		figCount = 1
 	}
@@ -171,6 +172,8 @@ func main() {
 					offset = int(math.Max(math.Min(float64(LVL_W-W), game.Complete()*float64(LVL_W)-float64(W)/2), 0))
 				case sdl.K_HOME:
 					offset = 0
+				case sdl.K_f:
+					doFastForward = !doFastForward
 				case sdl.K_s:
 					game.SaveNetsToFile()
 				}
@@ -202,7 +205,7 @@ func main() {
 		}
 
 		// sleep only if drawing and there is time to sleep more than 3ms
-		if doDraw && frameMs < FRAME_TIME_MS && FRAME_TIME_MS-frameMs > 3.0 {
+		if !doFastForward && doDraw && frameMs < FRAME_TIME_MS && FRAME_TIME_MS-frameMs > 3.0 {
 			time.Sleep(time.Millisecond * time.Duration(FRAME_TIME_MS-frameMs))
 		}
 	}

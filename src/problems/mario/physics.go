@@ -18,7 +18,7 @@ const BLOCK_SIZE int = 25
 
 var JUMP_FORCE util.Vector = util.Vector{
 	X: 0,
-	Y: -700,
+	Y: -500,
 }
 
 var X_ACCELERATION util.Vector = util.Vector{
@@ -123,7 +123,7 @@ func (l *Level) makeHole(c *int) {
 
 func (l *Level) makeObstacle(c *int) {
 	r := int(l.size.Y/float64(BLOCK_SIZE)) - 1
-	for q := 0; q < 5; q++ {
+	for q := 0; q < 4; q++ {
 		l.blocks[*c][r-q] = util.NewVector(float64(*c*BLOCK_SIZE), float64((r-q)*BLOCK_SIZE))
 	}
 }
