@@ -88,7 +88,7 @@ type MarioNode struct {
 	fig        *Figure
 	brain      *neural.Net
 	bestX      float64
-	idleX      float64
+	idleX      int
 	dead       bool
 	idleFrames uint32
 }
@@ -107,7 +107,27 @@ func (figs MarioCol) Swap(c, r int) {
 	figs[c], figs[r] = figs[r], figs[c]
 }
 
+type MarioStats struct {
+	dead      int
+	crossed   int
+	culled    int
+	decisions int
+}
+
+func (m *MarioStats) zero() {
+	m.dead = 0
+	m.crossed = 0
+	m.culled = 0
+	m.decisions = 0
+}
+
+func (m *MarioStats) print() {
+	fmt.Printf("Dead [%d] of them [%d] culled. Crosses [%d], mutations[%d]. Neural net decisions [%d]\n",
+		m.dead, m.culled, m.crossed, m.dead-m.crossed, m.decisions)
+}
+
 type Mario struct {
+	stats    MarioStats
 	figures  MarioCol
 	lvl      Level
 	drawCb   func(pos, size *util.Vector, color uint32)
@@ -184,6 +204,11 @@ func (m *Mario) LogicTick(dt float64) {
 	for c := 0; c < len(m.figures); c++ {
 		<-wg
 	}
+}
+
+func (m *Mario) StatsReportTick() {
+	m.stats.print()
+	m.stats.zero()
 }
 
 func (m *Mario) Jump() {
@@ -334,6 +359,7 @@ func (m *Mario) checkStep(c int) {
 }
 
 func (m *Mario) thnikStep(c int) {
+	m.stats.decisions++
 	bmap := m.lvl.BoolMapAt(&m.figures[c].fig.pos)
 
 	idx := 0
@@ -375,18 +401,32 @@ func (m *Mario) randNet() *neural.Net {
 func (m *Mario) mutateStep(c int) {
 
 	if m.figures[c].dead {
+		m.stats.dead++
 		m.figures[c].dead = false
 		m.figures[c].fig.pos = *m.lvl.NewFigurePos()
 		m.figures[c].fig.vel = *util.NewVector(0, 0)
 
+		needsMutation := true
+
+		mutateChance := (float64(c) / float64(len(m.figures))) * 2.0
+		forceCross := c >= len(m.figures)/2
+
+		if forceCross || neural.Chance(mutateChance) {
+			*m.figures[c].brain = *neural.Cross2(m.randNet(), m.randNet())
+			m.stats.crossed++
+			needsMutation = false
+		}
+
 		if m.figures[c].idleFrames >= idleThreshold {
-			m.figures[c].brain.Mutate(0.75)
-			m.figures[c].bestX *= 0.25
-		} else {
-			swapChance := (float64(c) / float64(len(m.figures))) * 2.0
-			if neural.Chance(swapChance) {
-				*m.figures[c].brain = *neural.Cross2(m.randNet(), m.randNet())
+			m.stats.culled++
+			if needsMutation {
+				needsMutation = false
+				m.figures[c].brain.Mutate(0.75)
+				m.figures[c].bestX *= 0.25
 			}
+		}
+
+		if needsMutation {
 			m.figures[c].brain.MutateWithMagnitude(0.01, 0.1)
 			m.figures[c].bestX *= 0.975
 		}
@@ -398,14 +438,13 @@ func (m *Mario) mutateStep(c int) {
 			m.figures[c].bestX = m.figures[c].fig.pos.X
 		}
 
-		if m.figures[c].fig.pos.X > m.figures[c].idleX {
-			m.figures[c].idleX = m.figures[c].fig.pos.X
+		if int(m.figures[c].fig.pos.X) > m.figures[c].idleX {
+			m.figures[c].idleX = int(m.figures[c].fig.pos.X)
 			m.figures[c].idleFrames = 0
 		} else {
 			m.figures[c].idleFrames++
 			if m.figures[c].idleFrames >= idleThreshold {
 				m.figures[c].dead = true
-				// c--
 			}
 		}
 

@@ -61,6 +61,10 @@ func (f *Flappy) LoadNetsFromFile() {
 
 }
 
+func (f *Flappy) StatsReportTick() {
+
+}
+
 func (f *Flappy) Jump() {
 	f.birds[0].bird.Jump()
 }

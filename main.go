@@ -16,6 +16,7 @@ type DrawableProblem interface {
 	SetDrawRectCb(cb func(pos, size *util.Vector, color uint32))
 	LogicTick(dt float64)
 	DrawTick()
+	StatsReportTick()
 	Complete() float64
 	Done() bool
 	Jump()
@@ -211,6 +212,7 @@ func main() {
 		}
 
 		if !lastReportTime.Add(time.Second).After(start) {
+			game.StatsReportTick()
 			lastReportTime = start
 			fmt.Printf("CHRand %d\tGRand %d\tG/C %f\n", neural.ChanRand, neural.GlobRand, float64(neural.GlobRand)/float64(neural.ChanRand))
 			neural.ChanRand = 0
