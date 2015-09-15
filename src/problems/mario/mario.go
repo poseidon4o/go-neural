@@ -112,6 +112,7 @@ type MarioStats struct {
 	crossed   int
 	culled    int
 	decisions int
+	completed float64
 }
 
 func (m *MarioStats) zero() {
@@ -173,7 +174,7 @@ func (m *Mario) LoadNetsFromFile() {
 }
 
 func (m *Mario) Complete() float64 {
-	return m.figures[0].bestX / m.lvl.size.X
+	return m.stats.completed
 }
 
 func (m *Mario) Done() bool {
@@ -187,6 +188,7 @@ func (m *Mario) SetDrawRectCb(cb func(pos, size *util.Vector, color uint32)) {
 func (m *Mario) LogicTick(dt float64) {
 	m.lvl.Step(dt)
 	sort.Sort(m.figures)
+	m.stats.completed = m.figures[0].bestX / m.lvl.size.X
 
 	wg := make(chan struct{}, len(m.figures))
 
