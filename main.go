@@ -67,7 +67,7 @@ func main() {
 	clearRect := sdl.Rect{0, 0, int32(W), int32(H)}
 	surface.FillRect(&clearRect, 0xffffffff)
 
-	figCount := 100
+	figCount := 1000
 	if doDev {
 		figCount = 1
 	}
@@ -212,12 +212,13 @@ func main() {
 		}
 
 		if !lastReportTime.Add(time.Second).After(start) {
+			fmt.Println("")
 			game.StatsReportTick()
 			lastReportTime = start
-			fmt.Printf("CHRand %d\tGRand %d\tG/C %f\n", neural.ChanRand, neural.GlobRand, float64(neural.GlobRand)/float64(neural.ChanRand))
 			neural.ChanRand = 0
 			neural.GlobRand = 0
-			fmt.Printf("ftime last: %f\tftime average %f\tcompletion %f%%\n", frameMs, averageFrameTime/1000000, game.Complete()*100)
+			fmt.Printf("Last FrameTime: %f\tAverage FrameTime %f\tCompletion %f%%\n", frameMs, averageFrameTime/1000000, game.Complete()*100)
+			fmt.Printf("FastForward %t\n", doFastForward)
 		}
 
 		// sleep only if drawing and there is time to sleep more than 3ms
