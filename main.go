@@ -257,10 +257,8 @@ func main() {
 			fmt.Println("")
 			game.StatsReportTick()
 			lastReportTime = start
-			neural.ChanRand = 0
-			neural.GlobRand = 0
 			fmt.Printf("Last FrameTime: %f\tAverage FrameTime %f\tCompletion %f%%\n", frameMs, averageFrameTime/1000000, game.Complete()*100)
-			fmt.Printf("FastForward %t\n", doFastForward)
+			fmt.Printf("FastForward %t\t Rand buffer refils %f\n", doFastForward, neural.BUFFER_REFILS)
 		}
 
 		// sleep only if drawing and there is time to sleep more than 3ms

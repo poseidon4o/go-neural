@@ -13,8 +13,7 @@ var values []float64
 var generator rand.Rand
 var idx int
 
-var ChanRand int = 0
-var GlobRand int = 0
+var BUFFER_REFILS float64 = 0
 
 func init() {
 	idx = 0
@@ -25,6 +24,19 @@ func init() {
 	for c := 0; c < RAND_BUFFER_SIZE; c++ {
 		values[c] = generator.Float64()
 	}
+
+	go func() {
+		step := 1 / float64(RAND_BUFFER_SIZE)
+		for {
+			for c := 0; c < RAND_BUFFER_SIZE; c++ {
+				values[c] = generator.Float64()
+				if c%10 == 0 {
+					time.Sleep(time.Microsecond)
+				}
+				BUFFER_REFILS += step
+			}
+		}
+	}()
 }
 
 func Rand() float64 {
