@@ -34,6 +34,9 @@ func main() {
 	fmt.Println("right:\tmove screen to the right")
 	fmt.Println("1:\tswitch to flappy")
 	fmt.Println("2:\tswitch to mario")
+	fmt.Println("s:\tsave all nets to file")
+	fmt.Println("f:\tturn on fast-forward mode")
+	fmt.Println("p:\ttake screenshot in format \"SS-#d.bmp\", where #d is [0,inf)")
 	fmt.Println("enter:\tcycle trough mario/flappy")
 	fmt.Println("esc:\teixt")
 	fmt.Println("")
@@ -109,6 +112,8 @@ func main() {
 
 	fl.SetDrawRectCb(drawCb)
 	mr.SetDrawRectCb(drawCb)
+
+	imageCounter := 0
 
 	var game DrawableProblem = fl
 
@@ -191,6 +196,35 @@ func main() {
 					doFastForward = !doFastForward
 				case sdl.K_s:
 					game.SaveNetsToFile()
+				case sdl.K_p:
+					h := int32(H)
+					w := int32(float64(LVL_W) * (game.Complete() + 0.001))
+
+					_, rmask, gmask, bmask, amask, err := sdl.PixelFormatEnumToMasks(sdl.PIXELFORMAT_RGB24)
+					image, err := sdl.CreateRGBSurface(0, w, h, 24, rmask, gmask, bmask, amask)
+
+					if err == nil {
+						name := fmt.Sprintf("SS-%d.bmp", imageCounter)
+						imageCounter++
+
+						rect := sdl.Rect{0, 0, w, h}
+						image.FillRect(&rect, 0xffffffff)
+						game.SetDrawRectCb(func(pos, size *util.Vector, color uint32) {
+							rect.X = int32(pos.X)
+							rect.Y = int32(pos.Y)
+							rect.W = int32(size.X)
+							rect.H = int32(size.Y)
+							image.FillRect(&rect, color)
+						})
+						game.DrawTick()
+						e := image.SaveBMP(name)
+						if e == nil {
+							fmt.Println("Saving image: ", name, "Size: ", w, "x", h)
+						} else {
+							fmt.Println("Failed to save image!", e)
+						}
+						game.SetDrawRectCb(drawCb)
+					}
 				}
 			}
 		}
