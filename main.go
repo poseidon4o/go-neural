@@ -211,6 +211,9 @@ func main() {
 					game.SaveNetsToFile()
 				case sdl.K_p:
 					h := int32(H)
+					if game == mr {
+						h = 250
+					}
 					w := int32(float64(LVL_W) * (game.Complete() + 0.001))
 
 					_, rmask, gmask, bmask, amask, err := sdl.PixelFormatEnumToMasks(sdl.PIXELFORMAT_RGB24)
