@@ -105,7 +105,7 @@ func main() {
 	}
 
 	fl := flappy.NewFlappy(figCount, util.NewVector(float64(LVL_W), float64(H)))
-	mr := mario.NewMario(figCount, util.NewVector(float64(LVL_W), float64(H)))
+	mr := mario.NewMario(figCount, util.NewVector(float64(LVL_W), float64(250)))
 
 	mr.LoadNetsFromFile()
 	fl.LoadNetsFromFile()
@@ -178,13 +178,21 @@ func main() {
 					}
 				case sdl.K_1:
 					game = fl
+					window.SetSize(W, 700)
+					surface, _ = window.GetSurface()
 				case sdl.K_2:
 					game = mr
+					window.SetSize(W, 250)
+					surface, _ = window.GetSurface()
 				case sdl.K_RETURN:
 					if game == fl {
 						game = mr
+						window.SetSize(W, 250)
+						surface, _ = window.GetSurface()
 					} else {
 						game = fl
+						window.SetSize(W, 700)
+						surface, _ = window.GetSurface()
 					}
 				case sdl.K_ESCAPE:
 					stop = true
