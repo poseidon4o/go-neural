@@ -124,27 +124,32 @@ func main() {
 	start := time.Now()
 	lastDrawTime := time.Now()
 	lastReportTime := time.Now()
+	loops := 0
 	for {
 		start = time.Now()
+		loops++
 
 		if doDraw {
 			if doFastForward {
 				if !lastDrawTime.Add(FRAME_TIME).After(start) {
 					lastDrawTime = start
 					window.UpdateSurface()
+					frame++
 					surface.FillRect(&clearRect, 0xffffffff)
 					game.DrawTick()
 				}
 			} else {
 				lastDrawTime = start
 				window.UpdateSurface()
+				frame++
 				surface.FillRect(&clearRect, 0xffffffff)
 				game.DrawTick()
 			}
 
-		} else if frame%10 == 0 {
+		} else if loops%10 == 0 {
 			// update only 10% of the frames
 			window.UpdateSurface()
+			frame++
 		}
 
 		game.LogicTick(1 / FPS)
@@ -241,8 +246,6 @@ func main() {
 			break
 		}
 
-		frame++
-
 		elapsed := time.Since(start)
 		frameMs := float64(elapsed) / 1000000
 
@@ -256,9 +259,11 @@ func main() {
 		if !lastReportTime.Add(time.Second).After(start) {
 			fmt.Println("")
 			game.StatsReportTick()
-			lastReportTime = start
 			fmt.Printf("Last FrameTime: %f\tAverage FrameTime %f\tCompletion %f%%\n", frameMs, averageFrameTime/1000000, game.Complete()*100)
-			fmt.Printf("FastForward %t\t Rand buffer refils %f\n", doFastForward, neural.BUFFER_REFILS)
+			fmt.Printf("FastForward %t\t Rand buffer refils %f\tFrames for last second %d\n", doFastForward, neural.BUFFER_REFILS, frame)
+
+			lastReportTime = start
+			frame = 0
 		}
 
 		// sleep only if drawing and there is time to sleep more than 3ms
