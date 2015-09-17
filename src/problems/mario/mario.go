@@ -84,9 +84,15 @@ func nrn(name NeuronName) int {
 	return int(name)
 }
 
+type MarioOutput struct {
+	jump float64
+	move float64
+}
+
 type MarioNode struct {
 	fig        *Figure
 	brain      *neural.Net
+	cache      map[uint64]MarioOutput
 	bestX      float64
 	idleX      int
 	dead       bool
@@ -260,6 +266,7 @@ func NewMario(figCount int, size *util.Vector) *Mario {
 		figs[c].dead = false
 		figs[c].bestX = 0
 		figs[c].fig = level.figures[c]
+		figs[c].cache = make(map[uint64]MarioOutput)
 	}
 
 	return &Mario{
@@ -362,29 +369,37 @@ func (m *Mario) checkStep(c int) {
 
 func (m *Mario) thnikStep(c int) {
 	m.stats.decisions++
-	bmap := m.lvl.BoolMapAt(&m.figures[c].fig.pos)
+	bmap := (m.lvl.BoolMapAt(&m.figures[c].fig.pos))
 
-	idx := 0
-	for idx = 0; idx < nrn(I48); idx++ {
-		if bmap.At(idx) {
-			m.figures[c].brain.Stimulate(int(idx)+nrn(I0), -1)
-		} else {
-			m.figures[c].brain.Stimulate(int(idx)+nrn(I0), 1)
+	res, ok := m.figures[c].cache[bmap.ToUint64()]
+
+	if !ok {
+		idx := 0
+		for idx = 0; idx < nrn(I48); idx++ {
+			if bmap.At(idx) {
+				m.figures[c].brain.Stimulate(int(idx)+nrn(I0), -1)
+			} else {
+				m.figures[c].brain.Stimulate(int(idx)+nrn(I0), 1)
+			}
 		}
+		m.figures[c].brain.Step()
+
+		res = MarioOutput{
+			jump: m.figures[c].brain.ValueOf(nrn(jump)),
+			move: m.figures[c].brain.ValueOf(nrn(xMove)),
+		}
+		m.figures[c].cache[bmap.ToUint64()] = res
+		m.figures[c].brain.Clear()
 	}
 
-	m.figures[c].brain.Step()
-
-	if m.figures[c].brain.ValueOf(nrn(jump)) > 0.75 {
+	if res.jump > 0.75 {
 		m.figures[c].fig.Jump()
 	}
 
-	xMoveValue := m.figures[c].brain.ValueOf(nrn(xMove))
-	if math.Abs(xMoveValue) > 0.75 {
-		m.figures[c].fig.Move(int(xMoveValue * 10))
+	if math.Abs(res.move) > 0.75 {
+		m.figures[c].fig.Move(int(res.move * 10))
 	}
 
-	m.figures[c].brain.Clear()
 }
 
 func (m *Mario) randNet() *neural.Net {
@@ -405,6 +420,7 @@ func (m *Mario) mutateStep(c int) {
 	if m.figures[c].dead {
 		m.stats.dead++
 		m.figures[c].dead = false
+		m.figures[c].cache = make(map[uint64]MarioOutput)
 		m.figures[c].fig.pos = *m.lvl.NewFigurePos()
 		m.figures[c].fig.vel = *util.NewVector(0, 0)
 

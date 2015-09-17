@@ -62,6 +62,10 @@ func (b *BoolMap) At(idx int) bool {
 	return (*b>>uint(idx))&1 == 1
 }
 
+func (b *BoolMap) ToUint64() uint64 {
+	return uint64(*b)
+}
+
 func (b *BoolMap) Set(idx int) {
 	*b |= 1 << uint(idx)
 }
