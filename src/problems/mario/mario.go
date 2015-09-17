@@ -119,6 +119,7 @@ type MarioStats struct {
 	culled    int
 	decisions int
 	completed float64
+	cacheHits int
 }
 
 func (m *MarioStats) zero() {
@@ -126,11 +127,12 @@ func (m *MarioStats) zero() {
 	m.crossed = 0
 	m.culled = 0
 	m.decisions = 0
+	m.cacheHits = 0
 }
 
 func (m *MarioStats) print() {
-	fmt.Printf("Dead [%d] of them [%d] culled. Crosses [%d], mutations[%d]. Neural net decisions [%d]\n",
-		m.dead, m.culled, m.crossed, m.dead-m.crossed, m.decisions)
+	fmt.Printf("Dead [%d] of them [%d] culled. Crosses [%d], mutations[%d]. Neural net decisions [%d], from cache (%d%%)\n",
+		m.dead, m.culled, m.crossed, m.dead-m.crossed, m.decisions, int(100*(float64(m.cacheHits)/float64(m.decisions))))
 }
 
 type Mario struct {
@@ -390,6 +392,8 @@ func (m *Mario) thnikStep(c int) {
 		}
 		m.figures[c].cache[bmap.ToUint64()] = res
 		m.figures[c].brain.Clear()
+	} else {
+		m.stats.cacheHits++
 	}
 
 	if res.jump > 0.75 {
