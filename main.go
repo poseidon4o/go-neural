@@ -70,7 +70,7 @@ func main() {
 	clearRect := sdl.Rect{0, 0, int32(W), int32(H)}
 	surface.FillRect(&clearRect, 0xffffffff)
 
-	figCount := 1000
+	figCount := 10000
 	if doDev {
 		figCount = 1
 	}

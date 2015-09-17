@@ -445,7 +445,7 @@ func (m *Mario) mutateStep(c int) {
 		}
 
 		if needsMutation || neural.Chance(0.01) {
-			m.figures[c].brain.MutateWithMagnitude(0.01, 0.1)
+			m.figures[c].brain.MutateWithMagnitude(0.01, 0.01)
 			m.figures[c].bestX *= 0.975
 		}
 
