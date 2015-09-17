@@ -11,7 +11,7 @@ import (
 	"sort"
 )
 
-const idleThreshold uint32 = 100
+const idleThreshold uint32 = 300
 
 type NeuronName int
 
@@ -120,6 +120,7 @@ type MarioStats struct {
 	decisions int
 	completed float64
 	cacheHits int
+	cacheSize int
 }
 
 func (m *MarioStats) zero() {
@@ -128,11 +129,12 @@ func (m *MarioStats) zero() {
 	m.culled = 0
 	m.decisions = 0
 	m.cacheHits = 0
+	m.cacheSize = 0
 }
 
 func (m *MarioStats) print() {
-	fmt.Printf("Dead [%d] of them [%d] culled. Crosses [%d], mutations[%d]. Neural net decisions [%d], from cache (%.3f%%)\n",
-		m.dead, m.culled, m.crossed, m.dead-m.crossed, m.decisions, 100*(float64(m.cacheHits)/float64(m.decisions)))
+	fmt.Printf("Dead [%d] of them [%d] culled. Crosses [%d], mutations[%d].\nNeural net decisions [%d], from cache (%.3f%%), cached values for last frame: [%d]\n",
+		m.dead, m.culled, m.crossed, m.dead-m.crossed, m.decisions, 100*(float64(m.cacheHits)/float64(m.decisions)), m.cacheSize)
 }
 
 type Mario struct {
@@ -197,6 +199,7 @@ func (m *Mario) LogicTick(dt float64) {
 	m.lvl.Step(dt)
 	sort.Sort(m.figures)
 	m.stats.completed = m.figures[0].bestX / m.lvl.size.X
+	m.stats.cacheSize = 0
 
 	wg := make(chan struct{}, len(m.figures))
 
@@ -208,6 +211,7 @@ func (m *Mario) LogicTick(dt float64) {
 	}
 
 	for c := range m.figures {
+		m.stats.cacheSize += len(m.figures[c].cache)
 		go stepC(c)
 	}
 
