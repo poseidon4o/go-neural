@@ -131,8 +131,8 @@ func (m *MarioStats) zero() {
 }
 
 func (m *MarioStats) print() {
-	fmt.Printf("Dead [%d] of them [%d] culled. Crosses [%d], mutations[%d]. Neural net decisions [%d], from cache (%d%%)\n",
-		m.dead, m.culled, m.crossed, m.dead-m.crossed, m.decisions, int(100*(float64(m.cacheHits)/float64(m.decisions))))
+	fmt.Printf("Dead [%d] of them [%d] culled. Crosses [%d], mutations[%d]. Neural net decisions [%d], from cache (%.3f%%)\n",
+		m.dead, m.culled, m.crossed, m.dead-m.crossed, m.decisions, 100*(float64(m.cacheHits)/float64(m.decisions)))
 }
 
 type Mario struct {
