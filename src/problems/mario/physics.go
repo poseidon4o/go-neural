@@ -56,27 +56,43 @@ func (f *Figure) Move(dir int) {
 	f.vel = *f.vel.Add(&acc)
 }
 
-type BoolMap uint64
+var BOOL_MAP_GRID_SIDE int = 9
 
-func (b *BoolMap) At(idx int) bool {
-	return (*b>>uint(idx))&1 == 1
+type BoolMap struct {
+	hi uint64
+	lo uint64
 }
 
-func (b *BoolMap) ToUint64() uint64 {
-	return uint64(*b)
+func NewBMap() BoolMap {
+	return BoolMap{
+		hi: 0,
+		lo: 0,
+	}
+}
+
+func (b *BoolMap) At(idx int) bool {
+	if idx > 63 {
+		return (b.hi>>uint(idx))&1 == 1
+	} else {
+		return (b.lo>>uint(idx))&1 == 1
+	}
 }
 
 func (b *BoolMap) Set(idx int) {
-	*b |= 1 << uint(idx)
+	if idx > 63 {
+		b.hi |= 1 << uint(idx)
+	} else {
+		b.lo |= 1 << uint(idx)
+	}
 }
 
 func (b *BoolMap) GridAt(x, y int) bool {
-	idx := y + x*7 + (int(49) / 2)
+	idx := y + x*BOOL_MAP_GRID_SIDE + (int(BOOL_MAP_GRID_SIDE*BOOL_MAP_GRID_SIDE) / 2)
 	return b.At(idx)
 }
 
 func (b *BoolMap) GridSet(x, y int) {
-	idx := y + x*7 + (int(49) / 2)
+	idx := y + x*BOOL_MAP_GRID_SIDE + (int(BOOL_MAP_GRID_SIDE*BOOL_MAP_GRID_SIDE) / 2)
 	b.Set(idx)
 }
 
@@ -201,13 +217,13 @@ func (l *Level) IsSolid(pos *util.Vector) bool {
 }
 
 func (l *Level) boolMapAtIdx(cx, cy int) BoolMap {
-	var res BoolMap = 0
-	cx -= 3
-	cy -= 3
+	var res BoolMap = NewBMap()
+	cx -= (BOOL_MAP_GRID_SIDE - 1) / 2
+	cy -= (BOOL_MAP_GRID_SIDE - 1) / 2
 
 	off := 0
-	for c := 0; c < 7; c++ {
-		for r := 0; r < 7; r++ {
+	for c := 0; c < BOOL_MAP_GRID_SIDE; c++ {
+		for r := 0; r < BOOL_MAP_GRID_SIDE; r++ {
 			if l.validCoord(cx+c, cy+r) && l.blocks[cx+c][cy+r] != nil {
 				res.Set(off)
 			}
@@ -223,7 +239,7 @@ func (l *Level) BoolMapAt(pos *util.Vector) BoolMap {
 	if l.validCoord(cx, cy) {
 		return l.bmap[cx][cy]
 	} else {
-		return 0
+		return NewBMap()
 	}
 }
 

@@ -16,57 +16,87 @@ const idleThreshold uint32 = 300
 type NeuronName int
 
 const (
-	I0 NeuronName = iota
+	I0  NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	_   NeuronName = iota
+	I48 NeuronName = iota
 
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-	_ NeuronName = iota
-
-	I48       NeuronName = iota
 	H1        NeuronName = iota
 	H2        NeuronName = iota
 	H3        NeuronName = iota
@@ -92,7 +122,7 @@ type MarioOutput struct {
 type MarioNode struct {
 	fig        *Figure
 	brain      *neural.Net
-	cache      map[uint64]MarioOutput
+	cache      map[BoolMap]MarioOutput
 	bestX      float64
 	idleX      int
 	dead       bool
@@ -272,7 +302,7 @@ func NewMario(figCount int, size *util.Vector) *Mario {
 		figs[c].dead = false
 		figs[c].bestX = 0
 		figs[c].fig = level.figures[c]
-		figs[c].cache = make(map[uint64]MarioOutput)
+		figs[c].cache = make(map[BoolMap]MarioOutput)
 	}
 
 	return &Mario{
@@ -375,9 +405,9 @@ func (m *Mario) checkStep(c int) {
 
 func (m *Mario) thnikStep(c int) {
 	m.stats.decisions++
-	bmap := (m.lvl.BoolMapAt(&m.figures[c].fig.pos))
+	bmap := m.lvl.BoolMapAt(&m.figures[c].fig.pos)
 
-	res, ok := m.figures[c].cache[bmap.ToUint64()]
+	res, ok := m.figures[c].cache[bmap]
 
 	if !ok {
 		idx := 0
@@ -394,7 +424,7 @@ func (m *Mario) thnikStep(c int) {
 			jump: m.figures[c].brain.ValueOf(nrn(jump)),
 			move: m.figures[c].brain.ValueOf(nrn(xMove)),
 		}
-		m.figures[c].cache[bmap.ToUint64()] = res
+		m.figures[c].cache[bmap] = res
 		m.figures[c].brain.Clear()
 	} else {
 		m.stats.cacheHits++
@@ -428,7 +458,7 @@ func (m *Mario) mutateStep(c int) {
 	if m.figures[c].dead {
 		m.stats.dead++
 		m.figures[c].dead = false
-		m.figures[c].cache = make(map[uint64]MarioOutput)
+		m.figures[c].cache = make(map[BoolMap]MarioOutput)
 		m.figures[c].fig.pos = *m.lvl.NewFigurePos()
 		m.figures[c].fig.vel = *util.NewVector(0, 0)
 
