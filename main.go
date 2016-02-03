@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	neural "github.com/poseidon4o/go-neural/src/neural"
 	flappy "github.com/poseidon4o/go-neural/src/problems/flappy"
@@ -27,6 +28,12 @@ type DrawableProblem interface {
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	agentsCountPtr := flag.Int("agents", 10000, "number of agents alive at a time")
+	levelWidthPtr := flag.Int("size", 20, "x in level_size = 1300 * x")
+
+	flag.Parse()
+
 	fmt.Println("Controls:")
 	fmt.Println("end:\tfurthest action in the level")
 	fmt.Println("home:\tmove back to level begining")
@@ -47,7 +54,7 @@ func main() {
 
 	W := 1300
 	H := 700
-	LVL_W := W * 50
+	LVL_W := W * *levelWidthPtr
 
 	var FPS float64 = 60.0
 	FRAME_TIME_MS := 1000 / FPS
@@ -70,7 +77,7 @@ func main() {
 	clearRect := sdl.Rect{0, 0, int32(W), int32(H)}
 	surface.FillRect(&clearRect, 0xffffffff)
 
-	figCount := 10000
+	figCount := *agentsCountPtr
 	if doDev {
 		figCount = 1
 	}
