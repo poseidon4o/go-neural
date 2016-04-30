@@ -167,9 +167,15 @@ func (m *MarioStats) print() {
 		m.dead, m.culled, m.crossed, m.dead-m.crossed, m.decisions, 100*(float64(m.cacheHits)/float64(m.decisions)), m.cacheSize)
 }
 
+type DebugMario struct {
+	figure *MarioNode
+	output MarioOutput
+}
+
 type Mario struct {
 	stats    MarioStats
 	figures  MarioCol
+	dbg      DebugMario
 	lvl      Level
 	drawCb   func(pos, size *util.Vector, color uint32)
 	drawSize int
@@ -240,6 +246,13 @@ func (m *Mario) LogicTick(dt float64) {
 		wg <- struct{}{}
 	}
 
+	m.dbg.figure = &m.figures[0]
+	for c := range m.figures {
+		if m.figures[c].fig.pos.X > m.dbg.figure.fig.pos.X {
+			m.dbg.figure = &m.figures[c]
+		}
+	}
+
 	for c := range m.figures {
 		m.stats.cacheSize += len(m.figures[c].cache)
 		go stepC(c)
@@ -306,8 +319,15 @@ func NewMario(figCount int, size *util.Vector) *Mario {
 	}
 
 	return &Mario{
-		figures:  figs,
-		lvl:      *level,
+		figures: figs,
+		lvl:     *level,
+		dbg: DebugMario{
+			figure: &figs[0],
+			output: MarioOutput{
+				jump: 0,
+				move: 0,
+			},
+		},
 		drawCb:   func(pos, size *util.Vector, color uint32) {},
 		drawSize: 5,
 	}
@@ -339,6 +359,24 @@ func (m *Mario) DrawTick() {
 	for c := range m.figures {
 		m.drawCb(m.figures[c].fig.pos.Add(size.Scale(0.5).Neg()), size, blue)
 	}
+
+	m.drawCb(
+		m.dbg.figure.fig.pos.Add(util.NewVector(-3., -20.)),
+		util.NewVector(2, 20),
+		0xff000000)
+
+	if m.dbg.output.move > 0 {
+		m.drawCb(
+			m.dbg.figure.fig.pos.Add(util.NewVector(0, -3)),
+			util.NewVector(20, 2),
+			0xff000000)
+	} else {
+		m.drawCb(
+			m.dbg.figure.fig.pos.Add(util.NewVector(-20, -3)),
+			util.NewVector(20, 2),
+			0xff000000)
+	}
+
 }
 
 func (m *Mario) checkStep(c int) {
@@ -438,6 +476,9 @@ func (m *Mario) thnikStep(c int) {
 		m.figures[c].fig.Move(int(res.move * 10))
 	}
 
+	if m.dbg.figure == &m.figures[c] {
+		m.dbg.output = res
+	}
 }
 
 func (m *Mario) randNet() *neural.Net {
