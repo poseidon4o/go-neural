@@ -49,7 +49,7 @@ func main() {
 	fmt.Println("")
 
 	doDraw := true
-	doDev := false
+	doDev := true
 	doFastForward := false
 
 	W := 1300
@@ -63,7 +63,7 @@ func main() {
 	sdl.Init(sdl.INIT_EVERYTHING)
 
 	window, err := sdl.CreateWindow("test", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
-		int(W), int(H), sdl.WINDOW_SHOWN)
+		int32(W), int32(H), sdl.WINDOW_SHOWN)
 	if err != nil {
 		panic(err)
 	}
@@ -127,6 +127,14 @@ func main() {
 	step := 65
 
 	frame := 0
+
+	toggleKeys := map[sdl.Keycode]bool {
+		sdl.K_f: true,
+		sdl.K_s: true,
+		sdl.K_p: true,
+		sdl.K_RETURN: true,
+	}
+
 	var averageFrameTime float64 = FRAME_TIME_MS * 1000000 // in nanosec
 	start := time.Now()
 	lastDrawTime := time.Now()
@@ -162,12 +170,18 @@ func main() {
 		game.LogicTick(1 / FPS)
 
 		stop := false
+
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
 			case *sdl.QuitEvent:
 				stop = true
-			case *sdl.KeyDownEvent:
-				switch t.Keysym.Sym {
+			case *sdl.KeyboardEvent:
+				code := t.Keysym.Sym
+				if (t.Repeat != 0 || t.Type != sdl.KEYUP) && toggleKeys[code] {
+					continue
+				}
+
+				switch code {
 				case sdl.K_LEFT:
 					if doDev {
 						game.Move(-1)
@@ -190,20 +204,20 @@ func main() {
 					}
 				case sdl.K_1:
 					game = fl
-					window.SetSize(W, 700)
+					window.SetSize(int32(W), 700)
 					surface, _ = window.GetSurface()
 				case sdl.K_2:
 					game = mr
-					window.SetSize(W, 250)
+					window.SetSize(int32(W), 250)
 					surface, _ = window.GetSurface()
 				case sdl.K_RETURN:
 					if game == fl {
 						game = mr
-						window.SetSize(W, 250)
+						window.SetSize(int32(W), 250)
 						surface, _ = window.GetSurface()
 					} else {
 						game = fl
-						window.SetSize(W, 700)
+						window.SetSize(int32(W), 700)
 						surface, _ = window.GetSurface()
 					}
 				case sdl.K_ESCAPE:
